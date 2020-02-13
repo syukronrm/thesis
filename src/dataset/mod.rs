@@ -14,20 +14,19 @@ pub struct Edge<'a> {
 }
 
 impl<'a> Edge<'a> {
+    #[allow(dead_code)]
     fn new(id: i32, ni: &'a Node, nj: &'a Node) -> Edge<'a> {
-        Edge {
-            id,
-            ni,
-            nj,
-            len: 1.00,
-        }
+        let diff_lng = ni.lng - nj.lng;
+        let diff_lat = ni.lat - nj.lat;
+        let len = (diff_lng * diff_lng + diff_lat * diff_lat).sqrt();
+        Edge { id, ni, nj, len }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use float_cmp::approx_eq;
     use super::*;
+    use float_cmp::approx_eq;
 
     #[test]
     fn create_node() {
@@ -54,6 +53,6 @@ mod tests {
 
         let e1 = Edge::new(1, &n1, &n2);
 
-        assert!(approx_eq!(f32, e1.len, 1.0, ulps = 2));
+        assert!(approx_eq!(f32, e1.len, 5.0, ulps = 2));
     }
 }

@@ -109,9 +109,6 @@ mod tests {
     fn read_node_file() {
         let mut path = current_dir().unwrap();
         path.push("dataset/california/normalized/cal.cnode.txt");
-
-        println!("{:?}", path);
-
         let nodes = read_node_csv(&path);
         let n0 = &nodes[0];
         assert_eq!(n0.id, 0);

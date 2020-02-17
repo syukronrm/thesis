@@ -104,11 +104,10 @@ mod tests {
         assert!(approx_eq!(f32, e1.len, 5.0, ulps = 2));
     }
 
-    use std::env::current_dir;
     #[test]
     fn read_node_file() {
-        let mut path = current_dir().unwrap();
-        path.push("dataset/california/normalized/cal.cnode.txt");
+        let project_path = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let path = project_path.join("dataset/california/normalized/cal.cnode.txt");
         let nodes = read_node_csv(&path);
         let n0 = &nodes[0];
         assert_eq!(n0.id, 0);

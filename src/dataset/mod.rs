@@ -63,6 +63,7 @@ fn read_node_csv(node_path: &PathBuf) -> Vec<Rc<Node>> {
             .expect("Failed to parse lat");
         vec.push(Rc::new(Node { id, lng, lat }));
     }
+    vec.sort_by(|a, b| a.id.partial_cmp(&b.id).unwrap());
     vec
 }
 
@@ -94,19 +95,15 @@ fn read_edge_csv(edge_path: &PathBuf, nodes: &Vec<Rc<Node>>) -> Vec<Edge> {
             .parse::<i32>()
             .expect("Failed to parse node j id");
 
-        let ni = nodes
-            .into_iter()
-            .find(move |&node| node.id == ni_id)
-            .unwrap();
-
-        let nj = nodes
-            .into_iter()
-            .find(move |&node| node.id == nj_id)
-            .unwrap();
+        let index_ni = nodes.binary_search_by(|n| n.id.cmp(&ni_id)).unwrap();
+        let index_nj = nodes.binary_search_by(|n| n.id.cmp(&nj_id)).unwrap();
+        let ni = nodes.get(index_ni).unwrap();
+        let nj = nodes.get(index_nj).unwrap();
 
         vec.push(Edge::new(id, ni.clone(), nj.clone()));
     }
 
+    vec.sort_by(|a,b| a.id.partial_cmp(&b.id).unwrap());
     vec
 }
 

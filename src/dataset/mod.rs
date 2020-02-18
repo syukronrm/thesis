@@ -1,5 +1,6 @@
 use csv::ReaderBuilder;
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
 
 #[derive(Debug)]
 pub struct Node {
@@ -9,16 +10,16 @@ pub struct Node {
 }
 
 #[derive(Debug)]
-pub struct Edge<'a> {
+pub struct Edge {
     pub id: i32,
-    pub ni: &'a Node,
-    pub nj: &'a Node,
+    pub ni: Rc<Node>,
+    pub nj: Rc<Node>,
     pub len: f32,
 }
 
-impl<'a> Edge<'a> {
+impl Edge {
     #[allow(dead_code)]
-    fn new(id: i32, ni: &'a Node, nj: &'a Node) -> Edge<'a> {
+    fn new(id: i32, ni: Rc<Node>, nj: Rc<Node>) -> Edge {
         let diff_lng = ni.lng - nj.lng;
         let diff_lat = ni.lat - nj.lat;
         let len = (diff_lng * diff_lng + diff_lat * diff_lat).sqrt();
@@ -27,7 +28,7 @@ impl<'a> Edge<'a> {
 }
 
 #[allow(dead_code)]
-fn reader<'a>(dir: &Path, node_file: &str, edge_file: &str) -> (Vec<Node>, Vec<Edge<'a>>) {
+fn reader<'a>(dir: &Path, node_file: &str, edge_file: &str) -> (Vec<Rc<Node>>, Vec<Edge>) {
     let node_path = dir.join(node_file);
     let edge_path = dir.join(edge_file);
     let nodes = read_node_csv(&node_path);
@@ -35,7 +36,7 @@ fn reader<'a>(dir: &Path, node_file: &str, edge_file: &str) -> (Vec<Node>, Vec<E
     (nodes, edges)
 }
 
-fn read_node_csv(node_path: &PathBuf) -> Vec<Node> {
+fn read_node_csv(node_path: &PathBuf) -> Vec<Rc<Node>> {
     let mut vec = Vec::new();
     let mut rdr = ReaderBuilder::new()
         .delimiter(b' ')
@@ -60,14 +61,52 @@ fn read_node_csv(node_path: &PathBuf) -> Vec<Node> {
             .expect("Failed to get index 2")
             .parse::<f32>()
             .expect("Failed to parse lat");
-        vec.push(Node { id, lng, lat });
+        vec.push(Rc::new(Node { id, lng, lat }));
     }
     vec
 }
 
 #[allow(dead_code, unused_variables)]
-fn read_edge_csv<'a>(edge_path: &PathBuf, nodes: &[Node]) -> Vec<Edge<'a>> {
-    let vec = Vec::new();
+fn read_edge_csv(edge_path: &PathBuf, nodes: &Vec<Rc<Node>>) -> Vec<Edge> {
+    let mut vec = Vec::new();
+
+    let mut rdr = ReaderBuilder::new()
+        .delimiter(b' ')
+        .has_headers(false)
+        .from_path(edge_path)
+        .unwrap();
+
+    for result in rdr.records() {
+        let record = result.unwrap();
+        let id = record
+            .get(0)
+            .expect("Failed to get index 0")
+            .parse::<i32>()
+            .expect("Failed to parse Edge ID");
+        let ni_id = record
+            .get(1)
+            .expect("Failed to get index 1")
+            .parse::<i32>()
+            .expect("Failed to parse node i id");
+        let nj_id = record
+            .get(2)
+            .expect("Failed to get index 2")
+            .parse::<i32>()
+            .expect("Failed to parse node j id");
+
+        let ni = nodes
+            .into_iter()
+            .find(move |&node| node.id == ni_id)
+            .unwrap();
+
+        let nj = nodes
+            .into_iter()
+            .find(move |&node| node.id == nj_id)
+            .unwrap();
+
+        vec.push(Edge::new(id, ni.clone(), nj.clone()));
+    }
+
     vec
 }
 
@@ -99,7 +138,7 @@ mod tests {
             lat: 4.0,
         };
 
-        let e1 = Edge::new(1, &n1, &n2);
+        let e1 = Edge::new(1, Rc::new(n1), Rc::new(n2));
 
         assert!(approx_eq!(f32, e1.len, 5.0, ulps = 2));
     }
@@ -111,5 +150,17 @@ mod tests {
         let nodes = read_node_csv(&path);
         let n0 = &nodes[0];
         assert_eq!(n0.id, 0);
+    }
+
+    #[test]
+    fn read_edge_file() {
+        let project_path = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let node_path = project_path.join("dataset/california/normalized/cal.cnode.txt");
+        let edge_path = project_path.join("dataset/california/normalized/cal.cedge.txt");
+        let nodes = read_node_csv(&node_path);
+        let edges = read_edge_csv(&edge_path, &nodes);
+        let e0 = &edges[0];
+        assert_eq!(e0.ni.id, 0);
+        assert_eq!(e0.nj.id, 1);
     }
 }

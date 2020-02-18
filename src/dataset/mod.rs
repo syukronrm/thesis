@@ -103,7 +103,7 @@ fn read_edge_csv(edge_path: &PathBuf, nodes: &[Rc<Node>]) -> Vec<Edge> {
         vec.push(Edge::new(id, ni.clone(), nj.clone()));
     }
 
-    vec.sort_by(|a,b| a.id.partial_cmp(&b.id).unwrap());
+    vec.sort_by(|a, b| a.id.partial_cmp(&b.id).unwrap());
     vec
 }
 

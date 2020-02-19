@@ -28,6 +28,35 @@ impl Edge {
 }
 
 #[allow(dead_code)]
+#[derive(Debug)]
+pub enum Action {
+    Insertion,
+    Deletion,
+}
+
+#[allow(dead_code)]
+#[derive(Debug)]
+pub struct NewObject {
+    id: i32,
+    attr: Vec<f32>,
+    dist: f32,
+    edge_id: i32,
+    action: Action,
+}
+
+impl NewObject {
+    pub fn new(id: i32, attr: Vec<f32>, dist: f32, edge_id: i32, action: Action) -> NewObject {
+        NewObject {
+            id,
+            attr,
+            dist,
+            edge_id,
+            action,
+        }
+    }
+}
+
+#[allow(dead_code)]
 fn reader(dir: &Path, node_file: &str, edge_file: &str) -> (Vec<Rc<Node>>, Vec<Edge>) {
     let node_path = dir.join(node_file);
     let edge_path = dir.join(edge_file);

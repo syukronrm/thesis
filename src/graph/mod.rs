@@ -38,6 +38,7 @@ pub struct Edge {
 pub struct Object {
     id: ObjectId,
     attr: Vec<f32>,
+    dist: f32, // distance from Node I
 }
 
 #[allow(dead_code)]

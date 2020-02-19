@@ -65,7 +65,7 @@ fn reader(dir: &Path, node_file: &str, edge_file: &str) -> (Vec<Rc<Node>>, Vec<E
     (nodes, edges)
 }
 
-fn read_node_csv(node_path: &PathBuf) -> Vec<Rc<Node>> {
+pub fn read_node_csv(node_path: &PathBuf) -> Vec<Rc<Node>> {
     let mut vec = Vec::new();
     let mut rdr = ReaderBuilder::new()
         .delimiter(b' ')
@@ -97,7 +97,7 @@ fn read_node_csv(node_path: &PathBuf) -> Vec<Rc<Node>> {
 }
 
 #[allow(dead_code, unused_variables)]
-fn read_edge_csv(edge_path: &PathBuf, nodes: &[Rc<Node>]) -> Vec<Edge> {
+pub fn read_edge_csv(edge_path: &PathBuf, nodes: &[Rc<Node>]) -> Vec<Edge> {
     let mut vec = Vec::new();
 
     let mut rdr = ReaderBuilder::new()

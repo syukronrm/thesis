@@ -4,6 +4,7 @@ mod graph;
 use petgraph::Graph as PetGraph;
 use petgraph::Undirected;
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use dataset::Action::*;
 use dataset::Edge as DataEdge;
@@ -16,35 +17,26 @@ type RefGraph = PetGraph<Node, Edge, Undirected>;
 #[allow(dead_code)]
 fn prepare_graph(edges: Vec<DataEdge>) -> RefGraph {
     let mut graph: RefGraph = PetGraph::new_undirected();
-
     let mut added_node_ids = HashMap::new();
 
-    for edge in edges {
-        let graph_ni = match added_node_ids.get(&edge.ni.id) {
+    let mut get_node_index = move |node: Rc<dataset::Node>, graph: &mut RefGraph| {
+        match added_node_ids.get(&node.id) {
             Some(node_index) => *node_index,
             None => {
                 let node_index = graph.add_node(Node {
-                    id: edge.ni.id,
-                    lng: edge.ni.lng,
-                    lat: edge.ni.lat,
+                    id: node.id,
+                    lng: node.lng,
+                    lat: node.lat,
                 });
-                added_node_ids.insert(edge.ni.id, node_index);
+                added_node_ids.insert(node.id, node_index);
                 node_index
             }
-        };
-        let graph_nj = match added_node_ids.get(&edge.nj.id) {
-            Some(node_index) => *node_index,
-            None => {
-                let node_index = graph.add_node(Node {
-                    id: edge.nj.id,
-                    lng: edge.nj.lng,
-                    lat: edge.nj.lat,
-                });
-                added_node_ids.insert(edge.nj.id, node_index);
-                node_index
-            }
-        };
+        }
+    };
 
+    for edge in edges {
+        let graph_ni = get_node_index(edge.ni, &mut graph);
+        let graph_nj = get_node_index(edge.nj, &mut graph);
         graph.add_edge(graph_ni, graph_nj, Edge::new(edge.id, edge.len));
     }
 

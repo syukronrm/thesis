@@ -19,7 +19,7 @@ pub struct Structure {
 impl Structure {
     pub fn new(graph: Graph) -> Structure {
         let s = Structure {
-            graph: graph,
+            graph,
             map_node_index: RefCell::new(HashMap::new()),
         };
         s.recompute_node_index();
@@ -31,7 +31,6 @@ impl Structure {
             self.graph
                 .node_indices()
                 .map(|index| (self.graph[index].id, index))
-                .into_iter()
                 .collect(),
         );
     }

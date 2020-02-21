@@ -1,3 +1,5 @@
+use petgraph::{Graph as PetGraph, Undirected};
+
 pub mod edge;
 pub mod graph;
 pub mod node;
@@ -5,3 +7,5 @@ pub mod node;
 pub use edge::Edge;
 pub use graph::Graph;
 pub use node::Node;
+
+pub type PetgraphNodeEdge = PetGraph<Node, Edge, Undirected>;

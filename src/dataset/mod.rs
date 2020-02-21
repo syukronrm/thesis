@@ -1,5 +1,5 @@
 use csv::ReaderBuilder;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::rc::Rc;
 
 #[derive(Debug)]
@@ -55,7 +55,7 @@ impl NewObject {
 }
 
 #[allow(dead_code)]
-fn load_edges(dir: &Path, node_file: &str, edge_file: &str) -> Vec<Edge> {
+pub fn load_edges(dir: PathBuf, node_file: &str, edge_file: &str) -> Vec<Edge> {
     let node_path = dir.join(node_file);
     let edge_path = dir.join(edge_file);
     let nodes = read_node_csv(&node_path);
@@ -136,6 +136,7 @@ pub fn read_edge_csv(edge_path: &PathBuf, nodes: &[Rc<Node>]) -> Vec<Edge> {
 mod tests {
     use super::*;
     use float_cmp::approx_eq;
+    use std::path::Path;
 
     #[test]
     fn create_node() {

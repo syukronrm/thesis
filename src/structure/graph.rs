@@ -1,5 +1,4 @@
-use crate::structure::edge::Edge;
-use crate::structure::node::Node;
+use crate::structure::{Edge, Node, PetgraphNodeEdge};
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -8,15 +7,14 @@ use petgraph::graph::NodeIndex;
 use petgraph::{Graph as PetGraph, Undirected};
 
 type NodeId = i32;
-pub type GraphNodeEdge = PetGraph<Node, Edge, Undirected>;
 
 pub struct Graph {
-    graph: GraphNodeEdge,
+    graph: PetGraph<Node, Edge, Undirected>,
     map_node_index: RefCell<HashMap<NodeId, NodeIndex>>,
 }
 
 impl Graph {
-    pub fn new(graph: GraphNodeEdge) -> Graph {
+    pub fn new(graph: PetgraphNodeEdge) -> Graph {
         let s = Graph {
             graph,
             map_node_index: RefCell::new(HashMap::new()),

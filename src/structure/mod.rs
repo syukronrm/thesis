@@ -8,17 +8,17 @@ type ObjectId = i32;
 type Scope = HashMap<Vec<DimensionIndex>, Pair>;
 type Pair = HashMap<ObjectId, Vec<Range>>;
 type NodeId = i32;
-type Graph = PetGraph<Node, Edge, Undirected>;
+pub type GraphNodeEdge = PetGraph<Node, Edge, Undirected>;
 
 #[allow(dead_code)]
-pub struct Structure {
-    graph: Graph,
+pub struct Graph {
+    graph: GraphNodeEdge,
     map_node_index: RefCell<HashMap<NodeId, NodeIndex>>,
 }
 
-impl Structure {
-    pub fn new(graph: Graph) -> Structure {
-        let s = Structure {
+impl Graph {
+    pub fn new(graph: GraphNodeEdge) -> Graph {
+        let s = Graph {
             graph,
             map_node_index: RefCell::new(HashMap::new()),
         };

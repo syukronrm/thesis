@@ -1,8 +1,7 @@
 mod dataset;
-mod graph;
+mod structure;
 
 use petgraph::Graph as PetGraph;
-use petgraph::Undirected;
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -10,16 +9,14 @@ use dataset::Action::*;
 use dataset::Edge as DataEdge;
 use dataset::*;
 
-use graph::{Edge, Node, Structure};
-
-type RefGraph = PetGraph<Node, Edge, Undirected>;
+use structure::{Edge, Node, Graph, GraphNodeEdge};
 
 #[allow(dead_code)]
-fn prepare_graph(edges: Vec<DataEdge>) -> RefGraph {
-    let mut graph: RefGraph = PetGraph::new_undirected();
+fn prepare_graph(edges: Vec<DataEdge>) -> GraphNodeEdge {
+    let mut graph: GraphNodeEdge = PetGraph::new_undirected();
     let mut added_node_ids = HashMap::new();
 
-    let mut get_node_index = move |node: Rc<dataset::Node>, graph: &mut RefGraph| {
+    let mut get_node_index = move |node: Rc<dataset::Node>, graph: &mut GraphNodeEdge| {
         match added_node_ids.get(&node.id) {
             Some(node_index) => *node_index,
             None => {
@@ -64,7 +61,7 @@ fn main() {
 
     let edges = get_all_edges();
     let graph = prepare_graph(edges);
-    let _structure = Structure::new(graph);
+    let _structure = Graph::new(graph);
 
     println!("Hello, world!");
 }

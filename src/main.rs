@@ -12,7 +12,6 @@ use dataset::*;
 use structure::{Edge, Graph, Node};
 pub type GraphNodeEdge = PetGraph<Node, Edge, Undirected>;
 
-#[allow(dead_code)]
 fn prepare_graph(edges: Vec<DataEdge>) -> GraphNodeEdge {
     let mut graph: GraphNodeEdge = PetGraph::new_undirected();
     let mut added_node_ids = HashMap::new();

@@ -18,7 +18,6 @@ pub struct Edge {
 }
 
 impl Edge {
-    #[allow(dead_code)]
     fn new(id: i32, ni: Rc<Node>, nj: Rc<Node>) -> Edge {
         let diff_lng = ni.lng - nj.lng;
         let diff_lat = ni.lat - nj.lat;
@@ -34,7 +33,6 @@ pub enum Action {
     Deletion,
 }
 
-#[allow(dead_code)]
 #[derive(Debug)]
 pub struct NewObject {
     id: i32,
@@ -95,7 +93,6 @@ pub fn read_node_csv(node_path: &PathBuf) -> Vec<Rc<Node>> {
     vec
 }
 
-#[allow(dead_code, unused_variables)]
 pub fn read_edge_csv(edge_path: &PathBuf, nodes: &[Rc<Node>]) -> Vec<Edge> {
     let mut vec = Vec::new();
 

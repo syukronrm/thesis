@@ -6,7 +6,6 @@ type ObjectId = i32;
 type Scope = HashMap<Vec<DimensionIndex>, Pair>;
 type Pair = HashMap<ObjectId, Vec<Range>>;
 
-#[allow(dead_code)]
 #[derive(Debug)]
 pub struct Edge {
     id: i32,
@@ -34,7 +33,6 @@ impl Edge {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Debug)]
 pub struct Object {
     id: ObjectId,
@@ -42,7 +40,6 @@ pub struct Object {
     dist: f32, // distance from Node I
 }
 
-#[allow(dead_code)]
 #[derive(Debug)]
 pub struct Range {
     start: f32,

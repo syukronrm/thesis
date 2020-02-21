@@ -10,7 +10,6 @@ use petgraph::{Graph as PetGraph, Undirected};
 type NodeId = i32;
 pub type GraphNodeEdge = PetGraph<Node, Edge, Undirected>;
 
-#[allow(dead_code)]
 pub struct Graph {
     graph: GraphNodeEdge,
     map_node_index: RefCell<HashMap<NodeId, NodeIndex>>,

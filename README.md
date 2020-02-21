@@ -10,5 +10,6 @@ cargo test
 ```
 
 # Todo
-[v] create simple edge and node
-[ ] compute skyline scope
+
+- [x] create simple edge and node
+- [ ] compute skyline scope

@@ -57,12 +57,11 @@ impl NewObject {
 }
 
 #[allow(dead_code)]
-fn reader(dir: &Path, node_file: &str, edge_file: &str) -> (Vec<Rc<Node>>, Vec<Edge>) {
+fn load_edges(dir: &Path, node_file: &str, edge_file: &str) -> Vec<Edge> {
     let node_path = dir.join(node_file);
     let edge_path = dir.join(edge_file);
     let nodes = read_node_csv(&node_path);
-    let edges = read_edge_csv(&edge_path, &nodes);
-    (nodes, edges)
+    read_edge_csv(&edge_path, &nodes)
 }
 
 pub fn read_node_csv(node_path: &PathBuf) -> Vec<Rc<Node>> {

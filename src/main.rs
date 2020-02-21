@@ -1,7 +1,7 @@
 mod dataset;
 mod structure;
 
-use petgraph::Graph as PetGraph;
+use petgraph::{Graph as PetGraph, Undirected};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -9,7 +9,8 @@ use dataset::Action::*;
 use dataset::Edge as DataEdge;
 use dataset::*;
 
-use structure::{Edge, Node, Graph, GraphNodeEdge};
+use structure::{Edge, Graph, Node};
+pub type GraphNodeEdge = PetGraph<Node, Edge, Undirected>;
 
 #[allow(dead_code)]
 fn prepare_graph(edges: Vec<DataEdge>) -> GraphNodeEdge {

@@ -66,7 +66,7 @@ impl Edge {
         };
     }
 
-    #[allow(dead_code, unused_variables)]
+    #[allow(dead_code)]
     pub fn insert_scope(&self, dimensions: Vec<DimensionIndex>, range: Range) {
         fn scope<'a>(edge: &'a Edge) -> &'a RefCell<Scope> {
             &edge.scope

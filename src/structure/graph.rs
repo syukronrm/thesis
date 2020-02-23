@@ -1,15 +1,14 @@
-use crate::structure::{Edge, Node, PetgraphNodeEdge};
+use crate::structure::PetgraphNodeEdge;
 
 use std::cell::RefCell;
 use std::collections::HashMap;
 
 use petgraph::graph::NodeIndex;
-use petgraph::{Graph as PetGraph, Undirected};
 
 type NodeId = i32;
 
 pub struct Graph {
-    graph: PetGraph<Node, Edge, Undirected>,
+    graph: PetgraphNodeEdge,
     map_node_index: RefCell<HashMap<NodeId, NodeIndex>>,
 }
 

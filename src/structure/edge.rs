@@ -10,6 +10,7 @@ type Pair = HashMap<ObjectId, Vec<Range>>;
 trait ScopeMethods {
     fn new(&self) -> Self;
     fn insert(&self, dimensions: Vec<DimensionIndex>, range: Range);
+    fn remove(&self, dimensions: Vec<DimensionIndex>, object_id: ObjectId);
 }
 
 impl ScopeMethods for Scope {
@@ -29,6 +30,18 @@ impl ScopeMethods for Scope {
             let new_pair = Edge::new_pair(range);
             scope.insert(dimensions, new_pair);
         };
+    }
+
+    fn remove(&self, dimensions: Vec<DimensionIndex>, object_id: ObjectId) {
+        let mut scope = self.borrow_mut();
+        let mut pair_len = 0;
+        if let Some(pair) = scope.get_mut(&dimensions) {
+            pair.remove(&object_id);
+            pair_len = pair.len();
+        }
+        if pair_len == 0 {
+            scope.remove(&dimensions);
+        }
     }
 }
 
@@ -84,8 +97,7 @@ mod test {
     use super::*;
     use float_cmp::approx_eq;
 
-    #[test]
-    fn insert_scope_test() {
+    fn create_edge() -> Edge {
         let edge = Edge::new(1, 100.0);
         let object = Object {
             id: 1,
@@ -98,12 +110,26 @@ mod test {
             object: Rc::new(object),
         };
         edge.scope.insert(vec![1, 2], range);
+        edge
+    }
+
+    #[test]
+    fn insert_scope_test() {
+        let edge = create_edge();
 
         let object_scope = edge.scope.borrow();
         let scope = object_scope.get(&vec![1, 2]).unwrap();
         let ranges = scope.get(&1).unwrap();
         let range = &ranges[0];
         assert!(approx_eq!(f32, range.start, 1.0, ulps = 2));
+    }
+
+    #[test]
+    fn remove_scope_test() {
+        let edge = create_edge();
+        assert_eq!(edge.scope.borrow().len(), 1);
+        edge.scope.remove(vec![1, 2], 1);
+        assert_eq!(edge.scope.borrow().len(), 0);
     }
 
     #[test]

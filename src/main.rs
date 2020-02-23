@@ -9,6 +9,7 @@ use dataset::*;
 
 use algo::create_initial_graph;
 
+#[allow(clippy::useless_let_if_seq)]
 fn main() {
     let _objects = vec![
         NewObject::new(1, vec![1.0, 8.0, 6.0, 7.0], 10.0, 4, Insertion),

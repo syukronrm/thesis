@@ -135,7 +135,6 @@ pub fn read_edge_csv(edge_path: &PathBuf, nodes: &[Rc<Node>]) -> Vec<Edge> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use float_cmp::approx_eq;
     use std::path::Path;
 
     #[test]
@@ -163,7 +162,7 @@ mod tests {
 
         let e1 = Edge::new(1, Rc::new(n1), Rc::new(n2));
 
-        assert!(approx_eq!(f32, e1.len, 5.0, ulps = 2));
+        assert!(e1.len == 5.0);
     }
 
     #[test]

@@ -4,8 +4,33 @@ use std::rc::Rc;
 
 type DimensionIndex = i8;
 type ObjectId = i32;
-type Scope = HashMap<Vec<DimensionIndex>, Pair>;
+type Scope = RefCell<HashMap<Vec<DimensionIndex>, Pair>>;
 type Pair = HashMap<ObjectId, Vec<Range>>;
+
+trait ScopeMethods {
+    fn new(&self) -> Self;
+    fn insert(&self, dimensions: Vec<DimensionIndex>, range: Range);
+}
+
+impl ScopeMethods for Scope {
+    fn new(&self) -> Self {
+        RefCell::new(HashMap::new())
+    }
+
+    fn insert(&self, dimensions: Vec<DimensionIndex>, range: Range) {
+        let mut scope = self.borrow_mut();
+        if let Some(pair) = scope.get_mut(&dimensions) {
+            if let Some(ranges) = pair.get_mut(&range.object.id) {
+                ranges.push(range);
+            } else {
+                pair.insert(range.object.id, vec![range]);
+            }
+        } else {
+            let new_pair = Edge::new_pair(range);
+            scope.insert(dimensions, new_pair);
+        };
+    }
+}
 
 #[derive(Debug)]
 pub struct Object {
@@ -26,23 +51,11 @@ pub struct Edge {
     id: i32,
     len: f32,
     objects: RefCell<Vec<Object>>,
-    scope: RefCell<Scope>,
-    sky_scope: RefCell<Scope>,
-    two_sky_scope: RefCell<Scope>,
-    d_sky_scope: RefCell<Scope>,
-    k_sky_scope: RefCell<Scope>,
-}
-
-macro_rules! create_insert_scope {
-    ($func_name:ident, $field:ident) => {
-        #[allow(dead_code)]
-        pub fn $func_name(&self, dimensions: Vec<DimensionIndex>, range: Range) {
-            fn scope<'a>(edge: &'a Edge) -> &'a RefCell<Scope> {
-                &edge.$field
-            }
-            self.insert(scope, dimensions, range);
-        }
-    };
+    scope: Scope,
+    sky_scope: Scope,
+    two_sky_scope: Scope,
+    d_sky_scope: Scope,
+    k_sky_scope: Scope,
 }
 
 impl Edge {
@@ -59,36 +72,11 @@ impl Edge {
         }
     }
 
-    fn insert(
-        &self,
-        f: fn(&Edge) -> &RefCell<Scope>,
-        dimensions: Vec<DimensionIndex>,
-        range: Range,
-    ) {
-        let mut scope = f(self).borrow_mut();
-        if let Some(pair) = scope.get_mut(&dimensions) {
-            if let Some(ranges) = pair.get_mut(&range.object.id) {
-                ranges.push(range);
-            } else {
-                pair.insert(range.object.id, vec![range]);
-            }
-        } else {
-            let new_pair = Edge::new_pair(range);
-            scope.insert(dimensions, new_pair);
-        };
-    }
-
     fn new_pair(range: Range) -> Pair {
         let mut pair = HashMap::new();
         pair.insert(range.object.id, vec![range]);
         pair
     }
-
-    create_insert_scope!(insert_scope, scope);
-    create_insert_scope!(insert_sky_scope, sky_scope);
-    create_insert_scope!(insert_two_sky_scope, two_sky_scope);
-    create_insert_scope!(insert_d_sky_scope, d_sky_scope);
-    create_insert_scope!(insert_k_sky_scope, k_sky_scope);
 }
 
 #[cfg(test)]
@@ -109,7 +97,7 @@ mod test {
             end: 1.0,
             object: Rc::new(object),
         };
-        edge.insert_scope(vec![1, 2], range);
+        edge.scope.insert(vec![1, 2], range);
 
         let object_scope = edge.scope.borrow();
         let scope = object_scope.get(&vec![1, 2]).unwrap();

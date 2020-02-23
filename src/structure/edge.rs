@@ -33,6 +33,18 @@ pub struct Edge {
     k_sky_scope: RefCell<Scope>,
 }
 
+macro_rules! create_insert_scope {
+    ($func_name:ident, $field:ident) => {
+        #[allow(dead_code)]
+        pub fn $func_name(&self, dimensions: Vec<DimensionIndex>, range: Range) {
+            fn scope<'a>(edge: &'a Edge) -> &'a RefCell<Scope> {
+                &edge.$field
+            }
+            self.insert(scope, dimensions, range);
+        }
+    };
+}
+
 impl Edge {
     pub fn new(id: i32, len: f32) -> Edge {
         Edge {
@@ -66,19 +78,17 @@ impl Edge {
         };
     }
 
-    #[allow(dead_code)]
-    pub fn insert_scope(&self, dimensions: Vec<DimensionIndex>, range: Range) {
-        fn scope<'a>(edge: &'a Edge) -> &'a RefCell<Scope> {
-            &edge.scope
-        }
-        self.insert(scope, dimensions, range);
-    }
-
     fn new_pair(range: Range) -> Pair {
         let mut pair = HashMap::new();
         pair.insert(range.object.id, vec![range]);
         pair
     }
+
+    create_insert_scope!(insert_scope, scope);
+    create_insert_scope!(insert_sky_scope, sky_scope);
+    create_insert_scope!(insert_two_sky_scope, two_sky_scope);
+    create_insert_scope!(insert_d_sky_scope, d_sky_scope);
+    create_insert_scope!(insert_k_sky_scope, k_sky_scope);
 }
 
 #[cfg(test)]

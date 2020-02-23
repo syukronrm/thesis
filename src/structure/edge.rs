@@ -64,7 +64,7 @@ pub struct Edge {
     id: i32,
     len: f32,
     objects: RefCell<Vec<Object>>,
-    scope: Scope,
+    object_scope: Scope,
     sky_scope: Scope,
     two_sky_scope: Scope,
     d_sky_scope: Scope,
@@ -77,7 +77,7 @@ impl Edge {
             id,
             len,
             objects: RefCell::new(Vec::new()),
-            scope: RefCell::new(HashMap::new()),
+            object_scope: RefCell::new(HashMap::new()),
             sky_scope: RefCell::new(HashMap::new()),
             two_sky_scope: RefCell::new(HashMap::new()),
             d_sky_scope: RefCell::new(HashMap::new()),
@@ -109,7 +109,7 @@ mod test {
             end: 1.0,
             object: Rc::new(object),
         };
-        edge.scope.insert(vec![1, 2], range);
+        edge.object_scope.insert(vec![1, 2], range);
         edge
     }
 
@@ -117,7 +117,7 @@ mod test {
     fn insert_scope_test() {
         let edge = create_edge();
 
-        let object_scope = edge.scope.borrow();
+        let object_scope = edge.object_scope.borrow();
         let scope = object_scope.get(&vec![1, 2]).unwrap();
         let ranges = scope.get(&1).unwrap();
         let range = &ranges[0];
@@ -127,9 +127,9 @@ mod test {
     #[test]
     fn remove_scope_test() {
         let edge = create_edge();
-        assert_eq!(edge.scope.borrow().len(), 1);
-        edge.scope.remove(vec![1, 2], 1);
-        assert_eq!(edge.scope.borrow().len(), 0);
+        assert_eq!(edge.object_scope.borrow().len(), 1);
+        edge.object_scope.remove(vec![1, 2], 1);
+        assert_eq!(edge.object_scope.borrow().len(), 0);
     }
 
     #[test]

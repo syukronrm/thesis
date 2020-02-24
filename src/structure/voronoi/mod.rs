@@ -7,7 +7,7 @@ pub mod state;
 type EdgeId = i32;
 
 #[allow(dead_code)]
-struct Voronoi(HashMap<EdgeId, Vec<Range>>);
+pub struct Voronoi(HashMap<EdgeId, Vec<Range>>);
 
 /// find voronoi:
 ///   // input: &graph, source_centroid, centroid_ids, max_distance
@@ -38,7 +38,7 @@ struct Voronoi(HashMap<EdgeId, Vec<Range>>);
 
 impl Voronoi {
     #[allow(dead_code)]
-    fn new() -> Voronoi {
+    pub fn new() -> Voronoi {
         Voronoi(HashMap::new())
     }
 }

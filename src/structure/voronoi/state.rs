@@ -4,10 +4,20 @@ type NodeId = i32;
 type CentroidId = i32;
 
 #[allow(dead_code)]
-struct State {
+pub struct State {
     node_id: NodeId,
     centroid_id: CentroidId,
     dist: f32,
+}
+
+impl State {
+    pub fn new(node_id: NodeId, centroid_id: CentroidId, dist: f32) -> State {
+        State {
+            node_id,
+            centroid_id,
+            dist,
+        }
+    }
 }
 
 impl Ord for State {
@@ -18,7 +28,7 @@ impl Ord for State {
 
         if other.dist < self.dist {
             Ordering::Less
-        } else if other.dist < self.dist {
+        } else if other.dist > self.dist {
             Ordering::Greater
         } else {
             Ordering::Equal

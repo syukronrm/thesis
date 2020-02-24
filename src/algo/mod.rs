@@ -8,6 +8,8 @@ use crate::structure::{Edge, Graph, Node, PetgraphNodeEdge};
 
 use crate::dataset::load_edges;
 
+mod voronoi;
+
 #[allow(dead_code)]
 pub fn create_initial_graph(dataset_dir: PathBuf, node_csv: &str, edge_csv: &str) -> Graph {
     let edges = load_edges(dataset_dir, node_csv, edge_csv);
@@ -37,7 +39,7 @@ fn prepare_graph(edges: Vec<DataEdge>) -> Graph {
     for edge in edges {
         let graph_ni = get_node_index(edge.ni, &mut graph);
         let graph_nj = get_node_index(edge.nj, &mut graph);
-        graph.add_edge(graph_ni, graph_nj, Edge::new(edge.id, edge.len));
+        graph.add_edge(graph_ni, graph_nj, Edge::new(edge.id, edge.len, 100, 101));
     }
 
     Graph::new(graph)

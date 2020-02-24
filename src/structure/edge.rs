@@ -4,6 +4,7 @@ use std::rc::Rc;
 
 type DimensionIndex = i8;
 type ObjectId = i32;
+type EdgeId = i32;
 type Scope = RefCell<HashMap<Vec<DimensionIndex>, Pair>>;
 type Pair = HashMap<ObjectId, Vec<Range>>;
 
@@ -47,9 +48,10 @@ impl ScopeMethods for Scope {
 
 #[derive(Debug)]
 pub struct Object {
-    id: ObjectId,
-    attr: Vec<f32>,
-    dist: f32, // distance from Node I
+    pub id: ObjectId,
+    pub attr: Vec<f32>,
+    pub dist: f32, // distance from Node I
+    pub edge_id: EdgeId,
 }
 
 #[derive(Debug)]
@@ -61,8 +63,10 @@ pub struct Range {
 
 #[derive(Debug)]
 pub struct Edge {
-    id: i32,
-    len: f32,
+    pub id: i32,
+    pub ni: i32,
+    pub nj: i32,
+    pub len: f32,
     objects: RefCell<Vec<Object>>,
     object_scope: Scope,
     sky_scope: Scope,
@@ -72,10 +76,12 @@ pub struct Edge {
 }
 
 impl Edge {
-    pub fn new(id: i32, len: f32) -> Edge {
+    pub fn new(id: i32, len: f32, ni: i32, nj: i32) -> Edge {
         Edge {
             id,
             len,
+            ni,
+            nj,
             objects: RefCell::new(Vec::new()),
             object_scope: RefCell::new(HashMap::new()),
             sky_scope: RefCell::new(HashMap::new()),
@@ -98,11 +104,12 @@ mod test {
     use float_cmp::approx_eq;
 
     fn create_edge() -> Edge {
-        let edge = Edge::new(1, 100.0);
+        let edge = Edge::new(1, 100.0, 100, 101);
         let object = Object {
             id: 1,
             attr: vec![1.0, 2.0],
             dist: 10.0,
+            edge_id: edge.id,
         };
         let range = Range {
             start: 1.0,
@@ -138,6 +145,7 @@ mod test {
             id: 1,
             attr: vec![1.0, 2.0],
             dist: 10.0,
+            edge_id: 1,
         };
         let pair = Edge::new_pair(Range {
             start: 1.0,

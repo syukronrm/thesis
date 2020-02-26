@@ -1,16 +1,19 @@
 use crate::structure::PetgraphNodeEdge;
 
+use std::rc::Rc;
 use std::cell::RefCell;
 use std::collections::HashMap;
 
 use crate::structure::*;
+use crate::structure::edge::Object;
 use petgraph::graph::{EdgeIndex, NodeIndex};
 
 type NodeId = i32;
 type EdgeId = i32;
 
 pub struct Graph {
-    graph: PetgraphNodeEdge,
+    pub graph: PetgraphNodeEdge,
+    pub objects: RefCell<HashMap<i32, Rc<Object>>>,
     map_node_index: RefCell<HashMap<NodeId, NodeIndex>>,
     map_edge_index: RefCell<HashMap<EdgeId, EdgeIndex>>,
 }
@@ -21,6 +24,7 @@ impl Graph {
             graph,
             map_node_index: RefCell::new(HashMap::new()),
             map_edge_index: RefCell::new(HashMap::new()),
+            objects: RefCell::new(HashMap::new()),
         };
         s.recompute_node_index();
         s.recompute_edge_index();
@@ -50,9 +54,16 @@ impl Graph {
         *map_edge_index.get(&edge_id).unwrap()
     }
 
+    #[allow(dead_code)]
     pub fn edge(&self, edge_id: i32) -> &Edge {
         let edge_index = self.edge_index(edge_id);
         self.graph.edge_weight(edge_index).unwrap()
+    }
+
+    #[allow(dead_code)]
+    pub fn node_index(&self, node_id: i32) -> NodeIndex {
+        let map_node_index = self.map_node_index.borrow();
+        *map_node_index.get(&node_id).unwrap()
     }
 
     #[allow(dead_code)]
@@ -62,6 +73,7 @@ impl Graph {
         self.graph.node_weight(*node_index).unwrap()
     }
 
+    #[allow(dead_code)]
     pub fn nodes_from_edge_id(&self, edge_id: EdgeId) -> Vec<i32> {
         let map_edge_index = self.map_edge_index.borrow();
         let edge_index = map_edge_index.get(&edge_id).unwrap();

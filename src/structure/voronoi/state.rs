@@ -1,19 +1,19 @@
+use petgraph::graph::NodeIndex;
 use std::cmp::Ordering;
 
-type NodeId = i32;
 type CentroidId = i32;
 
 #[allow(dead_code)]
 pub struct State {
-    node_id: NodeId,
-    centroid_id: CentroidId,
-    dist: f32,
+    pub node_index: NodeIndex,
+    pub centroid_id: CentroidId,
+    pub dist: f32,
 }
 
 impl State {
-    pub fn new(node_id: NodeId, centroid_id: CentroidId, dist: f32) -> State {
+    pub fn new(node_index: NodeIndex, centroid_id: CentroidId, dist: f32) -> State {
         State {
-            node_id,
+            node_index,
             centroid_id,
             dist,
         }

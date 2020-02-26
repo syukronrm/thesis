@@ -56,9 +56,19 @@ pub struct Object {
 
 #[derive(Debug)]
 pub struct Range {
-    start: f32,
-    end: f32,
-    object: Rc<Object>,
+    pub start: f32,
+    pub end: f32,
+    pub object: Rc<Object>,
+}
+
+impl Range {
+    pub fn new(start: f32, end: f32, object: Rc<Object>) -> Range {
+        Range {
+            start,
+            end,
+            object
+        }
+    }
 }
 
 #[derive(Debug)]

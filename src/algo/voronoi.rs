@@ -1,4 +1,4 @@
-use std::collections::{BinaryHeap, HashMap};
+use std::collections::{BTreeSet, HashMap};
 
 use petgraph::graph::NodeIndex;
 
@@ -8,7 +8,7 @@ use crate::structure::voronoi::Voronoi;
 use crate::structure::*;
 
 type ObjectId = i32;
-type Queue = BinaryHeap<State>;
+type Queue = BTreeSet<State>;
 
 struct VisitedNodes(HashMap<NodeIndex, (f32, ObjectId)>);
 
@@ -47,16 +47,16 @@ fn enqueue_neighbors(queue: &mut Queue, g: &Graph, centroids: &[Object]) {
         let node_n = g.graph.node_weight(node_index_n).unwrap();
         if edge.ni == node_n.id {
             let dist = edge.len * c.dist;
-            queue.push(State::new(node_index_n, c.id, dist));
+            queue.insert(State::new(node_index_n, c.id, dist));
 
             let dist = edge.len * (1.0 - c.dist);
-            queue.push(State::new(node_index_m, c.id, dist));
+            queue.insert(State::new(node_index_m, c.id, dist));
         } else {
             let dist = edge.len * (1.0 - c.dist);
-            queue.push(State::new(node_index_n, c.id, dist));
+            queue.insert(State::new(node_index_n, c.id, dist));
 
             let dist = edge.len * c.dist;
-            queue.push(State::new(node_index_m, c.id, dist));
+            queue.insert(State::new(node_index_m, c.id, dist));
         }
     }
 }
@@ -71,14 +71,14 @@ fn compute_voronoi(
 ) -> Vec<Voronoi> {
     let mut voronoi = Voronoi::new();
     let mut visited_nodes = VisitedNodes::new();
-    let mut queue: Queue = BinaryHeap::new();
+    let mut queue: Queue = BTreeSet::new();
     let graph = &g.graph;
     let objects = g.objects.borrow();
 
     enqueue_neighbors(&mut queue, g, &centroids);
 
     while !queue.is_empty() {
-        let state = queue.pop().unwrap();
+        let state = queue.iter().next().unwrap();
 
         if state.dist < max_distance {
             continue;
@@ -88,7 +88,7 @@ fn compute_voronoi(
             node_index: node_index_n,
             centroid_id,
             dist: dist_n,
-        } = state;
+        } = *state;
         let centroid = objects.get(&src_centroid_id).unwrap();
         let neighbors = graph.neighbors(node_index_n);
         for node_index_m in neighbors {
@@ -100,9 +100,12 @@ fn compute_voronoi(
             let edge = graph.edge_weight(edge_index_m).unwrap();
             let dist_m = dist_n + edge.len;
             if let Some((dist, centroid_id)) = visited_nodes.0.get(&node_index_m) {
+                if dist_m < *dist {
+                    
+                }
             } else {
                 if dist_m < max_distance {
-                    queue.push(State::new(node_index_m, centroid_id, dist_m));
+                    queue.insert(State::new(node_index_m, centroid_id, dist_m));
                     visited_nodes.insert(node_index_m, (dist_m, centroid_id));
                 }
 

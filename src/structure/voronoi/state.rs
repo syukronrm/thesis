@@ -26,9 +26,9 @@ impl Ord for State {
             panic!("State.dist is NaN!");
         }
 
-        if other.dist < self.dist {
+        if self.dist < other.dist {
             Ordering::Less
-        } else if other.dist > self.dist {
+        } else if self.dist > other.dist {
             Ordering::Greater
         } else {
             Ordering::Equal

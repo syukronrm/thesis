@@ -21,15 +21,15 @@ pub struct Voronoi(HashMap<EdgeIndex, Vec<Range>>);
 ///     if n < max_distance:
 ///       continue
 ///     for each edge e from n to m in n.neighbors() and m not visited by n.centroid_id do
-///       dist = n.distance + e.len
+///       dist_m = n.distance + e.len
 ///       if m is not visited by any centroid:
-///         if dist < max_distance:
-///           q.enqueue(state(m, q.centroid_id, dist))
-///           visited.insert(m.id, (dist, q.centroid_id))
+///         if dist_m < max_distance:
+///           q.enqueue(state(m, q.centroid_id, dist_m))
+///           visited.insert(m.id, (dist_m, q.centroid_id))
 ///           if q.centroid_id == source_centroid:
 ///             insert e to voronoi till max_distance
 ///       else if m is visited by another centroid:
-///         if dist < existing distance:
+///         if dist_m < existing distance:
 ///           replace visited with a new arrived q
 ///           replace queued node with a new arrived q
 ///         else

@@ -21,7 +21,7 @@ fn prepare_graph(edges: Vec<DataEdge>) -> Graph {
     let mut graph = PetGraph::new_undirected();
     let mut added_node_ids = HashMap::new();
 
-    let mut get_node_index = move |node: Rc<DataNode>, graph: &mut PetgraphNodeEdge| {
+    let mut get_node_index = move |node: &Rc<DataNode>, graph: &mut PetgraphNodeEdge| {
         match added_node_ids.get(&node.id) {
             Some(node_index) => *node_index,
             None => {
@@ -37,9 +37,13 @@ fn prepare_graph(edges: Vec<DataEdge>) -> Graph {
     };
 
     for edge in edges {
-        let graph_ni = get_node_index(edge.ni, &mut graph);
-        let graph_nj = get_node_index(edge.nj, &mut graph);
-        graph.add_edge(graph_ni, graph_nj, Edge::new(edge.id, edge.len, 100, 101));
+        let graph_ni = get_node_index(&edge.ni, &mut graph);
+        let graph_nj = get_node_index(&edge.nj, &mut graph);
+        graph.add_edge(
+            graph_ni,
+            graph_nj,
+            Edge::new(edge.id, edge.len, edge.ni.id, edge.nj.id),
+        );
     }
 
     Graph::new(graph)

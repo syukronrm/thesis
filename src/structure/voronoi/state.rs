@@ -4,6 +4,7 @@ use std::cmp::Ordering;
 type CentroidId = i32;
 
 #[allow(dead_code)]
+#[derive(Clone, Debug)]
 pub struct State {
     pub node_index: NodeIndex,
     pub centroid_id: CentroidId,

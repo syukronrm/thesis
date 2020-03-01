@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::fmt;
 use std::rc::Rc;
 
 type DimensionIndex = i8;
@@ -54,7 +55,18 @@ pub struct Object {
     pub edge_id: EdgeId,
 }
 
-#[derive(Debug)]
+impl Object {
+    #[allow(dead_code)]
+    pub fn new(id: ObjectId, attr: Vec<f32>, dist: f32, edge_id: EdgeId) -> Object {
+        Object {
+            id,
+            attr,
+            dist,
+            edge_id,
+        }
+    }
+}
+
 pub struct Range {
     pub start: f32,
     pub end: f32,
@@ -63,11 +75,17 @@ pub struct Range {
 
 impl Range {
     pub fn new(start: f32, end: f32, object: Rc<Object>) -> Range {
-        Range {
-            start,
-            end,
-            object
-        }
+        Range { start, end, object }
+    }
+}
+
+impl fmt::Debug for Range {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Range {{ {}, {}, {} }}",
+            self.start, self.end, self.object.id
+        )
     }
 }
 

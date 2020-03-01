@@ -1,21 +1,22 @@
 use crate::structure::PetgraphNodeEdge;
 
-use std::rc::Rc;
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::rc::Rc;
 
-use crate::structure::*;
 use crate::structure::edge::Object;
+use crate::structure::*;
 use petgraph::graph::{EdgeIndex, NodeIndex};
 
 type NodeId = i32;
 type EdgeId = i32;
+type ObjectId = i32;
 
 pub struct Graph {
     pub graph: PetgraphNodeEdge,
-    pub objects: RefCell<HashMap<i32, Rc<Object>>>,
-    map_node_index: RefCell<HashMap<NodeId, NodeIndex>>,
-    map_edge_index: RefCell<HashMap<EdgeId, EdgeIndex>>,
+    pub objects: RefCell<HashMap<ObjectId, Rc<Object>>>,
+    pub map_node_index: RefCell<HashMap<NodeId, NodeIndex>>,
+    pub map_edge_index: RefCell<HashMap<EdgeId, EdgeIndex>>,
 }
 
 impl Graph {
@@ -87,5 +88,28 @@ impl Graph {
             .iter()
             .flat_map(|e| self.nodes_from_edge_id(*e))
             .collect()
+    }
+
+    pub fn get_objects(&self, object_ids: Vec<ObjectId>) -> Vec<Rc<Object>> {
+        object_ids
+            .into_iter()
+            .map(move |oid| {
+                let objects = self.objects.borrow();
+                objects.get(&oid).unwrap().clone()
+            })
+            .rev()
+            .collect()
+    }
+
+    pub fn insert_object(&self, object: Rc<Object>) {
+        let mut objects = self.objects.borrow_mut();
+        objects.insert(object.id, object.clone());
+    }
+
+    #[allow(dead_code)]
+    pub fn insert_objects(&self, objects: Vec<Rc<Object>>) {
+        for o in objects {
+            self.insert_object(o);
+        }
     }
 }

@@ -7,6 +7,7 @@ use super::edge::Range;
 pub mod state;
 
 #[allow(dead_code)]
+#[derive(Debug)]
 pub struct Voronoi(HashMap<EdgeIndex, Vec<Range>>);
 
 /// find voronoi:
@@ -18,8 +19,6 @@ pub struct Voronoi(HashMap<EdgeIndex, Vec<Range>>);
 ///   initial enqueue 2 neigbor of centroids and its distance
 ///   while q not empty do:
 ///     n = q.dequeue
-///     if n < max_distance:
-///       continue
 ///     for each edge e from n to m in n.neighbors() and m not visited by n.centroid_id do
 ///       dist_m = n.distance + e.len
 ///       if m is not visited by any centroid:
@@ -47,6 +46,14 @@ impl Voronoi {
             ranges.push(range);
         } else {
             self.0.insert(edge_index, vec![range]);
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn print(&self) {
+        println!("Voronoi");
+        for (key, val) in self.0.iter() {
+            println!("EdgeIndex: {:?} val: {:?}", key, val);
         }
     }
 }

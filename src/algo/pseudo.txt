@@ -1,0 +1,62 @@
+Visited node_id {
+  centroid_id: i32
+  node_id: i32
+  dist: f32
+}
+
+MinHeap {
+  dist: f32,
+  node_id: i32
+}
+
+find voronoi
+  // input: &graph, source_centroid, centroid_ids, max_distance
+  // outout: voronoi
+  voronoi = []
+  visited = []
+  q = min_heap([])
+  change all centroid as node
+  insert the node to the graph
+  enqueue all the node of centroid as visited[x].dist = 0
+  while q is not empty:
+    n = q.dequeue
+    for each e from n to m in n.neighbors():
+      dist_m = visited[n].len + e.len
+      if visited[m] && visited[m].dist > dist_m:
+        replace visited[m]
+
+// CANCEL
+create voronoi on edge:
+  objects = gabungan o di ni, nj, dan e itu sendiri
+  for o in objects:
+    for o_ in objects:
+      if o == o_:
+        continue
+      if o in e and o_ in e:
+        if o.dist < o_.dist:
+          o.max_right = center_of_it
+          o_.max_left = center_of_it
+        else
+          o_.max_right = center_of_it
+          o.max_left = center_of_it
+      else if o in e:
+        if o_ in ni:
+          o.max_left = center_of_it
+          o_.max_right = center_of_it
+        if o_ in nj:
+          o.max_right = center_of_it
+          o_.max_left = center_of_it
+      else if o_ in e:
+        if o in ni:
+          o_.max_left = center_of_it
+          o.max_right = center_of_it
+        if o in nj:
+          o_.max_right = center_of_it
+          o.max_left = center_of_it
+      else:
+        if o in ni and o_ in nj:
+          o.max_right = center_of_it
+          o_.max_left = center_of_it
+        else
+          o.max_left = center_of_it
+          o_.max_right = center_of_it

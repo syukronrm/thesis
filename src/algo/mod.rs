@@ -1,4 +1,4 @@
-use petgraph::Graph as PetGraph;
+use petgraph::stable_graph::StableGraph;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::rc::Rc;
@@ -18,11 +18,12 @@ pub fn create_initial_graph(dataset_dir: PathBuf, node_csv: &str, edge_csv: &str
 
 #[allow(dead_code)]
 fn prepare_graph(edges: Vec<DataEdge>) -> Graph {
-    let mut graph = PetGraph::new_undirected();
+    let mut graph: PetgraphNodeEdge = StableGraph::with_capacity(0, 0);
     let mut added_node_ids = HashMap::new();
 
-    let mut get_node_index = move |node: &Rc<DataNode>, graph: &mut PetgraphNodeEdge| {
-        match added_node_ids.get(&node.id) {
+    let mut get_node_index =
+        move |node: &Rc<DataNode>, graph: &mut PetgraphNodeEdge| match added_node_ids.get(&node.id)
+        {
             Some(node_index) => *node_index,
             None => {
                 let node_index = graph.add_node(Node {
@@ -33,8 +34,7 @@ fn prepare_graph(edges: Vec<DataEdge>) -> Graph {
                 added_node_ids.insert(node.id, node_index);
                 node_index
             }
-        }
-    };
+        };
 
     for edge in edges {
         let graph_ni = get_node_index(&edge.ni, &mut graph);

@@ -1,4 +1,5 @@
 use std::collections::{BinaryHeap, HashMap};
+use std::rc::Rc;
 
 use crate::structure::*;
 use petgraph::graph::NodeIndex;
@@ -21,8 +22,8 @@ fn as_object_id(id: i32) -> i32 {
 }
 
 #[allow(dead_code)]
-fn graph_with_centroids(g: &mut Graph, centroids: &Vec<Object>) {
-    let mut map_edge_objects: HashMap<i32, Vec<Object>> = HashMap::new();
+fn graph_with_centroids(g: &mut Graph, centroids: &Vec<Rc<Object>>) {
+    let mut map_edge_objects: HashMap<i32, Vec<Rc<Object>>> = HashMap::new();
     for c in centroids {
         if let Some(vec) = map_edge_objects.get_mut(&c.edge_id) {
             vec.push(c.clone());
@@ -168,18 +169,18 @@ mod tests {
         });
         graph.add_edge(n1, n2, Edge::new(1, 5.0, 1, 2));
         let objects = vec![
-            Object {
+            Rc::new(Object {
                 id: 1,
                 attr: vec![1.0],
                 edge_id: 1,
                 dist: 0.4,
-            },
-            Object {
+            }),
+            Rc::new(Object {
                 id: 2,
                 attr: vec![1.0],
                 edge_id: 1,
                 dist: 0.8,
-            },
+            }),
         ];
 
         let mut g = Graph::new(graph);

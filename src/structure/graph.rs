@@ -106,4 +106,13 @@ impl Graph {
             self.insert_object(o);
         }
     }
+
+    pub fn add_node_index(&self, node_id: i32, node_index: NodeIndex) {
+        let mut map = self.map_node_index.borrow_mut();
+        if let Some(val) = map.get_mut(&node_id) {
+            *val = node_index;
+        } else {
+            map.insert(node_id, node_index);
+        }
+    }
 }

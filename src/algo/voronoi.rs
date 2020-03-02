@@ -7,6 +7,14 @@ fn as_node_id(id: i32) -> i32 {
     id + 100000
 }
 
+fn as_edge_ni_id(id: i32) -> i32 {
+    id + 200000
+}
+
+fn as_edge_nj_id(id: i32) -> i32 {
+    id + 300000
+}
+
 #[allow(dead_code)]
 fn as_object_id(id: i32) -> i32 {
     id - 100000
@@ -14,23 +22,76 @@ fn as_object_id(id: i32) -> i32 {
 
 #[allow(dead_code)]
 fn graph_with_centroids(g: &mut Graph, centroids: &Vec<Object>) {
-    for object in centroids {
-        let new_node = Node {
+    let mut map_edge_objects: HashMap<i32, Vec<Object>> = HashMap::new();
+    for c in centroids {
+        if let Some(vec) = map_edge_objects.get_mut(&c.edge_id) {
+            vec.push(c.clone());
+        } else {
+            map_edge_objects.insert(c.edge_id, vec![c.clone()]);
+        }
+    }
+
+    let insert_centroid_as_node = |g: &mut Graph,
+                                   left: &Node,
+                                   right: &Node,
+                                   object: &Object,
+                                   lng: f32,
+                                   lat: f32,
+                                   is_last|
+     -> NodeIndex {
+        let node = Node {
             id: as_node_id(object.id),
-            lng: 0.0,
-            lat: 0.0
+            lng,
+            lat,
         };
-        let edge_index = g.edge_index(object.edge_id);
-        let edge = g.graph.edge_weight(edge_index).unwrap();
-        let node_i_index = g.node_index(edge.ni);
-        let node_j_index = g.node_index(edge.nj);
-        let edge_from_ni = Edge::new(100000, edge.len * object.dist, new_node.id, edge.ni);
-        let edge_from_nj = Edge::new(100000, edge.len * object.dist, new_node.id, edge.nj);
-        let index = g.graph.add_node(new_node);
-        g.graph.add_edge(node_i_index, index, edge_from_ni);
-        g.graph.add_edge(node_j_index, index, edge_from_nj);
-        let mut map_node_index = g.map_node_index.borrow_mut();
-        map_node_index.insert(as_node_id(object.id), index);
+
+        let left_index = g.node_index(left.id);
+        let edge_len_left = {
+            let x = left.lng - node.lng;
+            let y = left.lat - node.lat;
+            (x.powi(2) + y.powi(2)).sqrt()
+        };
+        let edge_left = Edge::new(as_edge_ni_id(node.id), edge_len_left, left.id, node.id);
+        let new_node = g.graph.add_node(node.clone());
+        g.add_node_index(node.id, new_node);
+        g.graph.add_edge(left_index, new_node, edge_left);
+
+        if is_last {
+            let right_index = g.node_index(right.id);
+            let edge_len_right = {
+                let x = right.lng - node.lng;
+                let y = right.lat - node.lat;
+                (x.powi(2) + y.powi(2)).sqrt()
+            };
+            let edge_right = Edge::new(as_edge_nj_id(node.id), edge_len_right, node.id, right.id);
+            g.graph.add_edge(new_node, right_index, edge_right);
+        }
+
+        new_node
+    };
+
+    for (key, value) in &mut map_edge_objects {
+        value.sort_by(|a, b| a.dist.partial_cmp(&b.dist).unwrap());
+
+        let edge = g.edge(*key).clone();
+        let node_ni = g.node(edge.ni).clone();
+        let node_nj = g.node(edge.nj).clone();
+
+        let mut left = g.node(edge.ni).clone();
+        let right = g.node(edge.nj).clone();
+
+        let mut iter = value.iter().peekable();
+        while let Some(object) = iter.next() {
+            let lng = (node_nj.lng - node_ni.lng) * object.dist + node_ni.lng;
+            let lat = (node_nj.lat - node_ni.lat) * object.dist + node_ni.lat;
+            let is_last = if let Some(_) = iter.peek() {
+                false
+            } else {
+                true
+            };
+            let left_index = insert_centroid_as_node(g, &left, &right, object, lng, lat, is_last);
+            left = g.graph.node_weight(left_index).unwrap().clone();
+        }
     }
 }
 
@@ -55,7 +116,12 @@ fn voronoi(g: &Graph, centroid_ids: Vec<NodeIndex>, max_distance: f32) {
         heap.push(State::new(centroid_index, centroid_index, 0.0));
     }
 
-    while let Some(State { node_index, centroid_id, dist}) = heap.pop() {
+    while let Some(State {
+        node_index,
+        centroid_id,
+        dist,
+    }) = heap.pop()
+    {
         let existing_distance = dist_map.get(&node_index).unwrap();
         if dist > *existing_distance {
             continue;
@@ -90,16 +156,43 @@ mod tests {
     #[test]
     fn test_graph_with_centroids() {
         let mut graph: PetgraphNodeEdge = petgraph::stable_graph::StableGraph::with_capacity(0, 0);
-        let n1 = graph.add_node(Node { id: 1, lng: 0.0, lat: 0.0});
-        let n2 = graph.add_node(Node { id: 2, lng: 3.0, lat: 4.0});
+        let n1 = graph.add_node(Node {
+            id: 1,
+            lng: 0.0,
+            lat: 0.0,
+        });
+        let n2 = graph.add_node(Node {
+            id: 2,
+            lng: 3.0,
+            lat: 4.0,
+        });
         graph.add_edge(n1, n2, Edge::new(1, 5.0, 1, 2));
         let objects = vec![
-            Object { id: 1, attr: vec![1.0], edge_id: 1, dist: 0.5 }
+            Object {
+                id: 1,
+                attr: vec![1.0],
+                edge_id: 1,
+                dist: 0.4,
+            },
+            Object {
+                id: 2,
+                attr: vec![1.0],
+                edge_id: 1,
+                dist: 0.8,
+            },
         ];
 
         let mut g = Graph::new(graph);
         graph_with_centroids(&mut g, &objects);
-        assert_eq!(g.graph.edge_indices().count(), 3);
-        assert_eq!(g.graph.node_indices().count(), 3);
+        assert_eq!(g.graph.edge_indices().count(), 4);
+        assert_eq!(g.graph.node_indices().count(), 4);
+
+        for node_index in g.graph.node_indices() {
+            println!("{:?}", g.graph.node_weight(node_index));
+        }
+
+        for edge_index in g.graph.edge_indices() {
+            println!("{:?}", g.graph.edge_weight(edge_index));
+        }
     }
 }

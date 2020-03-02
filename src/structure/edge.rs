@@ -47,7 +47,7 @@ impl ScopeMethods for Scope {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Object {
     pub id: ObjectId,
     pub attr: Vec<f32>,
@@ -67,6 +67,7 @@ impl Object {
     }
 }
 
+#[derive(Clone)]
 pub struct Range {
     pub start: f32,
     pub end: f32,
@@ -89,7 +90,7 @@ impl fmt::Debug for Range {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Edge {
     pub id: i32,
     pub ni: i32,

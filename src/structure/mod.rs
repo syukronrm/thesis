@@ -1,5 +1,5 @@
-use petgraph::Undirected;
 use petgraph::stable_graph::StableGraph as PetGraph;
+use petgraph::Undirected;
 
 pub mod edge;
 pub mod graph;

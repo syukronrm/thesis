@@ -2,7 +2,7 @@ use std::collections::{BinaryHeap, HashMap};
 use std::rc::Rc;
 
 use crate::structure::*;
-use petgraph::graph::NodeIndex;
+use petgraph::graph::{EdgeIndex, NodeIndex};
 
 fn as_node_id(id: i32) -> i32 {
     id + 100000
@@ -22,8 +22,9 @@ fn as_object_id(id: i32) -> i32 {
 }
 
 #[allow(dead_code)]
-fn graph_with_centroids(g: &mut Graph, centroids: &Vec<Rc<Object>>) {
+fn graph_with_centroids(g: &mut Graph, centroids: &Vec<Rc<Object>>) -> Vec<NodeIndex> {
     let mut map_edge_objects: HashMap<i32, Vec<Rc<Object>>> = HashMap::new();
+    let mut new_node_indices = Vec::new();
     for c in centroids {
         if let Some(vec) = map_edge_objects.get_mut(&c.edge_id) {
             vec.push(c.clone());
@@ -91,14 +92,42 @@ fn graph_with_centroids(g: &mut Graph, centroids: &Vec<Rc<Object>>) {
                 true
             };
             let left_index = insert_centroid_as_node(g, &left, &right, object, lng, lat, is_last);
+            new_node_indices.push(left_index);
             left = g.graph.node_weight(left_index).unwrap().clone();
+        }
+    }
+
+    new_node_indices
+}
+
+#[derive(Debug)]
+struct VoronoiRange {
+    start: f32,
+    end: f32,
+}
+
+#[derive(Debug)]
+struct Voronoi(HashMap<EdgeIndex, Vec<VoronoiRange>>);
+
+impl Voronoi {
+    pub fn new() -> Voronoi {
+        Voronoi(HashMap::new())
+    }
+
+    pub fn insert(&mut self, edge: EdgeIndex, range: VoronoiRange) {
+        if let Some(vr) = self.0.get_mut(&edge) {
+            vr.push(range);
+        } else {
+            self.0.insert(edge, vec![range]);
         }
     }
 }
 
 #[allow(dead_code)]
-fn voronoi(g: &Graph, centroid_ids: Vec<NodeIndex>, max_distance: f32) {
+fn voronoi(g: &mut Graph, centroids: &Vec<Rc<Object>>, max_distance: f32) -> Voronoi {
+    let new_node_indices = graph_with_centroids(g, centroids);
     let graph = &g.graph;
+    let mut voronoi: Voronoi = Voronoi::new();
 
     // set all distance to the max
     let mut dist_map = {
@@ -111,9 +140,10 @@ fn voronoi(g: &Graph, centroid_ids: Vec<NodeIndex>, max_distance: f32) {
     let mut heap: BinaryHeap<State> = BinaryHeap::new();
 
     // set centroid distances to 0 and insert centroid to heap queue
-    for centroid_index in centroid_ids {
+    for centroid_index in new_node_indices {
         let val = dist_map.get_mut(&centroid_index).unwrap();
         *val = 0.0;
+        println!("heap.push {:?}", centroid_index);
         heap.push(State::new(centroid_index, centroid_index, 0.0));
     }
 
@@ -123,31 +153,46 @@ fn voronoi(g: &Graph, centroid_ids: Vec<NodeIndex>, max_distance: f32) {
         dist,
     }) = heap.pop()
     {
+        println!("heap.pop {:?}", node_index);
         let existing_distance = dist_map.get(&node_index).unwrap();
         if dist > *existing_distance {
             continue;
         }
 
+        let node = g.graph.node_weight(node_index).unwrap();
         let neighbors = graph.neighbors(node_index);
         for node_index_next in neighbors {
             let edge_index = graph.find_edge(node_index, node_index_next).unwrap();
             let edge = graph.edge_weight(edge_index).unwrap();
             let next = dist + edge.len;
 
-            if next > max_distance {
-                // add edge from start to max_distance to voronoi
-                continue;
-            }
-
             let next_existing = dist_map.get(&node_index_next).unwrap();
             if next < *next_existing {
+                println!("heap.push {:?}", node_index_next);
                 heap.push(State::new(node_index_next, centroid_id, next));
                 let val = dist_map.get_mut(&node_index_next).unwrap();
                 *val = next;
+
+                if dist < max_distance && next > max_distance {
+                    println!("node.id {:?} edge.len {:?}", node.id, edge.len);
+                    let start = if edge.ni == node.id { 0.0 } else { edge.len };
+                    let end = if edge.ni == node.id {
+                        max_distance - dist
+                    } else {
+                        edge.len - (max_distance - dist)
+                    };
+    
+                    let range = VoronoiRange { start, end };
+                    println!("voronoi edge_index {:?} range insert {:?}", edge_index, range);
+                    voronoi.insert(edge_index, range);
+                    continue;
+                }
                 // add all edge to voronoi
             }
         }
     }
+
+    voronoi
 }
 
 #[cfg(test)]
@@ -195,5 +240,37 @@ mod tests {
         for edge_index in g.graph.edge_indices() {
             println!("{:?}", g.graph.edge_weight(edge_index));
         }
+    }
+
+    #[test]
+    fn test_voronoi() {
+        use std::path::Path;
+        use crate::create_initial_graph;
+
+        let project_path = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let dataset_dir = project_path.join("dataset/test01");
+        let node_csv = "node.txt";
+        let edge_csv = "edge.txt";
+        let mut graph = create_initial_graph(dataset_dir, node_csv, edge_csv);
+
+        let objects = vec![
+            Rc::new(Object {
+                id: 1,
+                attr: vec![1.0],
+                edge_id: 4,
+                dist: 0.3535533,
+            }),
+            // Rc::new(Object {
+            //     id: 2,
+            //     attr: vec![1.0],
+            //     edge_id: 1,
+            //     dist: 0.8,
+            // }),
+        ];
+
+        let voronoi = voronoi(&mut graph, &objects, 100.0);
+        println!("{:?}", voronoi);
+        println!("{:?}", graph.map_edge_index);
+        println!("{:?}", graph.map_node_index);
     }
 }

@@ -41,6 +41,7 @@ impl Voronoi {
         Voronoi(HashMap::new())
     }
 
+    #[allow(dead_code)]
     pub fn insert(&mut self, edge_index: EdgeIndex, range: Range) {
         if let Some(ranges) = self.0.get_mut(&edge_index) {
             ranges.push(range);

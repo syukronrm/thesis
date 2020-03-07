@@ -71,6 +71,7 @@ impl Graph {
         self.graph.node_weight(*node_index).unwrap()
     }
 
+    #[allow(dead_code)]
     pub fn nodes_from_edge_id(&self, edge_id: EdgeId) -> Vec<i32> {
         let map_edge_index = self.map_edge_index.borrow();
         let edge_index = map_edge_index.get(&edge_id).unwrap();
@@ -78,6 +79,7 @@ impl Graph {
         vec![edge.ni, edge.nj]
     }
 
+    #[allow(dead_code)]
     pub fn nodes_from_edge_ids(&self, edge_ids: &[EdgeId]) -> Vec<i32> {
         edge_ids
             .iter()
@@ -85,6 +87,7 @@ impl Graph {
             .collect()
     }
 
+    #[allow(dead_code)]
     pub fn get_objects(&self, object_ids: Vec<ObjectId>) -> Vec<Rc<Object>> {
         object_ids
             .into_iter()
@@ -96,11 +99,13 @@ impl Graph {
             .collect()
     }
 
+    #[allow(dead_code)]
     pub fn insert_object(&self, object: Rc<Object>) {
         let mut objects = self.objects.borrow_mut();
         objects.insert(object.id, object.clone());
     }
 
+    #[allow(dead_code)]
     pub fn insert_objects(&self, objects: Vec<Rc<Object>>) {
         for o in objects {
             self.insert_object(o);

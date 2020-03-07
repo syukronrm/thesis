@@ -75,6 +75,7 @@ pub struct Range {
 }
 
 impl Range {
+    #[allow(dead_code)]
     pub fn new(start: f32, end: f32, object: Rc<Object>) -> Range {
         Range { start, end, object }
     }

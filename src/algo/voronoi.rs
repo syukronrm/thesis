@@ -173,21 +173,29 @@ fn voronoi(g: &mut Graph, centroids: &Vec<Rc<Object>>, max_distance: f32) -> Vor
                 let val = dist_map.get_mut(&node_index_next).unwrap();
                 *val = next;
 
-                if dist < max_distance && next > max_distance {
-                    println!("node.id {:?} edge.len {:?}", node.id, edge.len);
-                    let start = if edge.ni == node.id { 0.0 } else { edge.len };
-                    let end = if edge.ni == node.id {
-                        max_distance - dist
+                if dist < max_distance {
+                    if next > max_distance {
+                        println!("node.id {:?} edge.id {:?} edge.len {:?} next {:?}", node.id, edge.id, edge.len, next);
+                        let start = if edge.ni == node.id { 0.0 } else { edge.len };
+                        let end = if edge.ni == node.id {
+                            max_distance - dist
+                        } else {
+                            edge.len - (max_distance - dist)
+                        };
+        
+                        let range = VoronoiRange { start, end };
+                        println!("voronoi edge_index {:?} range insert {:?}", edge_index, range);
+                        voronoi.insert(edge_index, range);
                     } else {
-                        edge.len - (max_distance - dist)
-                    };
-    
-                    let range = VoronoiRange { start, end };
-                    println!("voronoi edge_index {:?} range insert {:?}", edge_index, range);
-                    voronoi.insert(edge_index, range);
-                    continue;
+                        println!("node.id {:?} edge.id {:?} edge.len {:?}", node.id, edge.id, edge.len);
+                        let start = if edge.ni == node.id { 0.0 } else { edge.len };
+                        let end = if edge.ni == node.id { next } else { 0.0 };
+        
+                        let range = VoronoiRange { start, end };
+                        println!("voronoi edge_index {:?} range insert {:?}", edge_index, range);
+                        voronoi.insert(edge_index, range);
+                    }
                 }
-                // add all edge to voronoi
             }
         }
     }

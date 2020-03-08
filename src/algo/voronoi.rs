@@ -21,8 +21,25 @@ fn as_object_id(id: i32) -> i32 {
     id - 100000
 }
 
+#[derive(Debug)]
+pub struct MapOldToNewEdges(HashMap<EdgeIndex, Vec<EdgeIndex>>);
+
+impl MapOldToNewEdges {
+    pub fn new() -> MapOldToNewEdges {
+        MapOldToNewEdges(HashMap::new())
+    }
+
+    pub fn insert(&mut self, old: EdgeIndex, new: EdgeIndex) {
+        if let Some(vec) = self.0.get_mut(&old) {
+            vec.push(new);
+        } else {
+            self.0.insert(old, vec![new]);
+        }
+    }
+}
+
 #[allow(dead_code)]
-pub fn graph_with_centroids(g: &mut Graph, centroids: &Vec<Rc<Object>>) -> Vec<NodeIndex> {
+pub fn graph_with_centroids(g: &mut Graph, centroids: &Vec<Rc<Object>>, map_old_new: &mut MapOldToNewEdges) -> Vec<NodeIndex> {
     let mut map_edge_objects: HashMap<i32, Vec<Rc<Object>>> = HashMap::new();
     let mut new_node_indices = Vec::new();
     for c in centroids {
@@ -33,7 +50,8 @@ pub fn graph_with_centroids(g: &mut Graph, centroids: &Vec<Rc<Object>>) -> Vec<N
         }
     }
 
-    let insert_centroid_as_node = |g: &mut Graph,
+    let mut insert_centroid_as_node = |g: &mut Graph,
+                                   edge_index: EdgeIndex,
                                    left: &Node,
                                    right: &Node,
                                    object: &Object,
@@ -57,8 +75,9 @@ pub fn graph_with_centroids(g: &mut Graph, centroids: &Vec<Rc<Object>>) -> Vec<N
         let new_node = g.graph.add_node(node.clone());
         g.add_node_index(node.id, new_node);
         let edge_id = edge_left.id;
-        let edge_index = g.graph.add_edge(left_index, new_node, edge_left);
-        g.add_edge_index(edge_id, edge_index);
+        let new_edge_index = g.graph.add_edge(left_index, new_node, edge_left);
+        g.add_edge_index(edge_id, new_edge_index);
+        map_old_new.insert(edge_index, new_edge_index);
 
         if is_last {
             let right_index = g.node_index(right.id);
@@ -69,8 +88,9 @@ pub fn graph_with_centroids(g: &mut Graph, centroids: &Vec<Rc<Object>>) -> Vec<N
             };
             let edge_right = Edge::new(as_edge_nj_id(node.id), edge_len_right, node.id, right.id);
             let edge_id = edge_right.id;
-            let edge_index = g.graph.add_edge(new_node, right_index, edge_right);
-            g.add_edge_index(edge_id, edge_index);
+            let new_edge_index = g.graph.add_edge(new_node, right_index, edge_right);
+            g.add_edge_index(edge_id, new_edge_index);
+            map_old_new.insert(edge_index, new_edge_index);
         }
 
         new_node
@@ -79,6 +99,7 @@ pub fn graph_with_centroids(g: &mut Graph, centroids: &Vec<Rc<Object>>) -> Vec<N
     for (key, value) in &mut map_edge_objects {
         value.sort_by(|a, b| a.dist.partial_cmp(&b.dist).unwrap());
 
+        let edge_index = g.edge_index(*key);
         let edge = g.edge(*key).clone();
         let node_ni = g.node(edge.ni).clone();
         let node_nj = g.node(edge.nj).clone();
@@ -95,7 +116,7 @@ pub fn graph_with_centroids(g: &mut Graph, centroids: &Vec<Rc<Object>>) -> Vec<N
             } else {
                 true
             };
-            let left_index = insert_centroid_as_node(g, &left, &right, object, lng, lat, is_last);
+            let left_index = insert_centroid_as_node(g, edge_index, &left, &right, object, lng, lat, is_last);
             new_node_indices.push(left_index);
             left = g.graph.node_weight(left_index).unwrap().clone();
         }
@@ -149,7 +170,8 @@ impl Voronoi {
 
 #[allow(dead_code)]
 pub fn voronoi(g: &mut Graph, centroids: &Vec<Rc<Object>>, max_distance: f32) -> Voronoi {
-    let new_node_indices = graph_with_centroids(g, centroids);
+    let mut map_old_new = MapOldToNewEdges::new();
+    let new_node_indices = graph_with_centroids(g, centroids, &mut map_old_new);
     let graph = &g.graph;
     let mut voronoi: Voronoi = Voronoi::new();
 
@@ -300,9 +322,14 @@ mod tests {
         ];
 
         let mut g = Graph::new(graph);
-        graph_with_centroids(&mut g, &objects);
+        let mut map_old_new = MapOldToNewEdges::new();
+        graph_with_centroids(&mut g, &objects, &mut map_old_new);
         assert_eq!(g.graph.edge_indices().count(), 4);
         assert_eq!(g.graph.node_indices().count(), 4);
+
+        for vec in map_old_new.0.values() {
+            assert_eq!(vec.len(), 3);
+        }
 
         for node_index in g.graph.node_indices() {
             println!("{:?}", g.graph.node_weight(node_index));

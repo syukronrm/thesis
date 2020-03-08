@@ -134,6 +134,14 @@ impl Voronoi {
         }
     }
 
+    pub fn exists(&self, edge: EdgeIndex) -> bool {
+        if let Some(_) = self.0.get(&edge) {
+            true
+        } else {
+            false
+        }
+    }
+
     pub fn content(self) -> HashMap<EdgeIndex, Vec<VoronoiRange>> {
         self.0
     }
@@ -147,9 +155,9 @@ pub fn voronoi(g: &mut Graph, centroids: &Vec<Rc<Object>>, max_distance: f32) ->
 
     // set all distance to the max
     let mut dist_map = {
-        let mut map: HashMap<NodeIndex, f32> = HashMap::new();
+        let mut map: HashMap<NodeIndex, (f32, Option<NodeIndex>)> = HashMap::new();
         g.graph.node_indices().into_iter().for_each(|x| {
-            map.insert(x, std::f32::MAX);
+            map.insert(x, (std::f32::MAX, None));
         });
         map
     };
@@ -158,7 +166,7 @@ pub fn voronoi(g: &mut Graph, centroids: &Vec<Rc<Object>>, max_distance: f32) ->
     // set centroid distances to 0 and insert centroid to heap queue
     for centroid_index in new_node_indices {
         let val = dist_map.get_mut(&centroid_index).unwrap();
-        *val = 0.0;
+        *val = (0.0, Some(centroid_index));
         println!("heap.push {:?}", centroid_index);
         heap.push(State::new(centroid_index, centroid_index, 0.0));
     }
@@ -170,7 +178,7 @@ pub fn voronoi(g: &mut Graph, centroids: &Vec<Rc<Object>>, max_distance: f32) ->
     }) = heap.pop()
     {
         println!("heap.pop {:?} centroid_id {:?}", node_index, centroid_id);
-        let existing_distance = dist_map.get(&node_index).unwrap();
+        let (existing_distance, _) = dist_map.get(&node_index).unwrap();
         if dist > *existing_distance {
             continue;
         }
@@ -184,35 +192,72 @@ pub fn voronoi(g: &mut Graph, centroids: &Vec<Rc<Object>>, max_distance: f32) ->
             println!("    neigbor dist {:?} edge.id {:?} edge.len {:?}", dist, edge.id, edge.len);
             let next = dist + edge.len;
 
-            let next_existing = dist_map.get(&node_index_next).unwrap();
-            if next < *next_existing {
-                println!("      heap.push {:?}", node_index_next);
-                heap.push(State::new(node_index_next, centroid_id, next));
-                let val = dist_map.get_mut(&node_index_next).unwrap();
-                *val = next;
+            let (next_existing, next_centroid) = dist_map.get(&node_index_next).unwrap();
 
-                if dist < max_distance {
-                    if next > max_distance {
-                        println!("        1 node.id {:?} edge.id {:?} edge.len {:?} next {:?}", node.id, edge.id, edge.len, next);
-                        let start = if edge.ni == node.id { 0.0 } else { edge.len };
-                        let end = if edge.ni == node.id {
-                            max_distance - dist
+            if None == *next_centroid || Some(centroid_id) == *next_centroid {
+                if next < *next_existing {
+                    println!("      heap.push {:?}", node_index_next);
+                    heap.push(State::new(node_index_next, centroid_id, next));
+                    let val = dist_map.get_mut(&node_index_next).unwrap();
+                    *val = (next, Some(centroid_id));
+
+                    if dist < max_distance {
+                        if next > max_distance {
+                            println!("        1 node.id {:?} edge.id {:?} edge.len {:?} next {:?}", node.id, edge.id, edge.len, next);
+                            let start = if edge.ni == node.id { 0.0 } else { edge.len };
+                            let end = if edge.ni == node.id {
+                                max_distance - dist
+                            } else {
+                                edge.len - (max_distance - dist)
+                            };
+            
+                            let range = VoronoiRange { start, end, centroid_id };
+                            println!("        voronoi edge_index {:?} range insert {:?}", edge_index, range);
+                            voronoi.insert(edge_index, range);
                         } else {
-                            edge.len - (max_distance - dist)
-                        };
-        
-                        let range = VoronoiRange { start, end, centroid_id };
-                        println!("        voronoi edge_index {:?} range insert {:?}", edge_index, range);
-                        voronoi.insert(edge_index, range);
-                    } else {
-                        println!("        2 node.id {:?} edge.id {:?} edge.len {:?} next {:?}", node.id, edge.id, edge.len, next);
-                        let start = if edge.ni == node.id { 0.0 } else { edge.len };
-                        let end = if edge.ni == node.id { edge.len } else { 0.0 };
-        
-                        let range = VoronoiRange { start, end, centroid_id };
-                        println!("        voronoi edge_index {:?} range insert {:?}", edge_index, range);
-                        voronoi.insert(edge_index, range);
+                            println!("        2 node.id {:?} edge.id {:?} edge.len {:?} next {:?}", node.id, edge.id, edge.len, next);
+                            let start = if edge.ni == node.id { 0.0 } else { edge.len };
+                            let end = if edge.ni == node.id { edge.len } else { 0.0 };
+            
+                            let range = VoronoiRange { start, end, centroid_id };
+                            println!("        voronoi edge_index {:?} range insert {:?}", edge_index, range);
+                            voronoi.insert(edge_index, range);
+                        }
                     }
+                }
+            } else {
+                if voronoi.exists(edge_index) { continue; }
+
+                let center_dist = ((dist + next_existing + edge.len) / 2.0) - dist;
+                if edge.ni == node.id {
+                    let range = VoronoiRange {
+                        start: 0.0,
+                        end: center_dist,
+                        centroid_id
+                    };
+                    voronoi.insert(edge_index, range);
+
+                    let range = VoronoiRange {
+                        start: center_dist,
+                        end: edge.len,
+                        centroid_id: next_centroid.unwrap(),
+                    };
+                    voronoi.insert(edge_index, range);
+                } else {
+                    let center_dist = edge.len - center_dist;
+                    let range = VoronoiRange {
+                        start: center_dist,
+                        end: edge.len,
+                        centroid_id
+                    };
+                    voronoi.insert(edge_index, range);
+
+                    let range = VoronoiRange {
+                        start: 0.0,
+                        end: center_dist,
+                        centroid_id: next_centroid.unwrap(),
+                    };
+                    voronoi.insert(edge_index, range);
                 }
             }
         }

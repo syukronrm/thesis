@@ -41,9 +41,9 @@ fn main2() {
 }
 
 fn main() {
+    use crate::algo::voronoi::*;
     use crate::structure::*;
     use std::rc::Rc;
-    use crate::algo::voronoi::*;
 
     let project_path = Path::new(env!("CARGO_MANIFEST_DIR"));
     let dataset_dir = project_path.join("dataset/test01");
@@ -76,5 +76,4 @@ fn main() {
     }
     println!("{:?}", graph.map_edge_index);
     println!("{:?}", graph.map_node_index);
-
 }

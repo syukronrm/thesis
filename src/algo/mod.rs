@@ -8,7 +8,7 @@ use crate::structure::{Edge, Graph, Node, PetgraphNodeEdge};
 
 use crate::dataset::load_edges;
 
-mod voronoi;
+pub mod voronoi;
 
 #[allow(dead_code)]
 pub fn create_initial_graph(dataset_dir: PathBuf, node_csv: &str, edge_csv: &str) -> Graph {

@@ -120,4 +120,13 @@ impl Graph {
             map.insert(node_id, node_index);
         }
     }
+
+    pub fn add_edge_index(&self, edge_id: i32, edge_index: EdgeIndex) {
+        let mut map = self.map_edge_index.borrow_mut();
+        if let Some(val) = map.get_mut(&edge_id) {
+            *val = edge_index;
+        } else {
+            map.insert(edge_id, edge_index);
+        }
+    }
 }

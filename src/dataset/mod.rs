@@ -43,6 +43,7 @@ pub struct NewObject {
 }
 
 impl NewObject {
+    #[allow(dead_code)]
     pub fn new(id: i32, attr: Vec<f32>, dist: f32, edge_id: i32, action: Action) -> NewObject {
         NewObject {
             id,

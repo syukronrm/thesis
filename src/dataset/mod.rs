@@ -56,6 +56,40 @@ impl NewObject {
 }
 
 #[allow(dead_code)]
+pub fn read_object_csv(object_path: &PathBuf, d: usize) -> Vec<Rc<NewObject>> {
+    let mut vec = Vec::new();
+
+    let mut rdr = ReaderBuilder::new()
+        .delimiter(b' ')
+        .has_headers(false)
+        .from_path(object_path)
+        .unwrap();
+
+    for result in rdr.records() {
+        let record = result.unwrap();
+        let action = record.get(1).unwrap().parse::<i32>().unwrap();
+        let id = record.get(1).unwrap().parse::<i32>().unwrap();
+        let edge_id = record.get(2).unwrap().parse::<i32>().unwrap();
+        let dist = record.get(3).unwrap().parse::<f32>().unwrap();
+        let mut attr = Vec::new();
+        for i in 0..d {
+            let val = record.get(4 + i).unwrap().parse::<f32>().unwrap();
+            attr.push(val);
+        }
+        let new_object = Rc::new(NewObject{
+            id,
+            attr,
+            dist,
+            edge_id,
+            action: if action == 1 { Action::Insertion } else { Action::Deletion }
+        });
+        vec.push(new_object);
+    }
+
+    vec
+}
+
+#[allow(dead_code)]
 pub fn load_edges(dir: PathBuf, node_file: &str, edge_file: &str) -> Vec<Edge> {
     let node_path = dir.join(node_file);
     let edge_path = dir.join(edge_file);
@@ -185,5 +219,16 @@ mod tests {
         let e0 = &edges[0];
         assert_eq!(e0.ni.id, 0);
         assert_eq!(e0.nj.id, 1);
+    }
+
+    #[test]
+    fn read_object_csv_test() {
+        let project_path = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let object_path = project_path.join("dataset/test01/object.txt");
+        let objects = read_object_csv(&object_path, 4);
+        let o1 = objects.get(0).unwrap();
+        let o2 = objects.get(1).unwrap();
+        assert_eq!(o1.id, 1);
+        assert_eq!(o2.id, 2);
     }
 }

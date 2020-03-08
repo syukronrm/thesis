@@ -11,7 +11,7 @@ impl Multiqueries {
     self.0.push(query);
   }
 
-  pub fn create_pairs(&self) -> Vec<Pair> {
+  pub fn pairs(&self) -> Vec<Pair> {
     let mut dimensions = Vec::new();
     for query in &self.0 {
       for val in query {
@@ -45,7 +45,7 @@ mod test {
     m.insert(vec![2, 3]);
     m.insert(vec![2, 3, 6]);
 
-    let pairs = m.create_pairs();
+    let pairs = m.pairs();
     assert_eq!(pairs.len(), 6);
 
     let p1 = pairs.get(0).unwrap();

@@ -20,15 +20,9 @@ fn main2() {
     ];
 
     let project_path = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let mut dataset_dir = project_path.join("dataset/california/normalized");
-    let mut node_csv = "cal.cnode.txt";
-    let mut edge_csv = "cal.cedge.txt";
-
-    if std::env::var("TEST").is_ok() {
-        dataset_dir = project_path.join("dataset/test01");
-        node_csv = "node.txt";
-        edge_csv = "edge.txt";
-    }
+    let dataset_dir = project_path.join("dataset/test01");
+    let node_csv = "node.txt";
+    let edge_csv = "edge.txt";
 
     println!(
         "Info: use dataset {:?} ({:?} and {:?})",
@@ -40,6 +34,7 @@ fn main2() {
     println!("Hello, world!");
 }
 
+#[allow(dead_code)]
 fn main() {
     use crate::algo::voronoi::*;
     use crate::structure::*;

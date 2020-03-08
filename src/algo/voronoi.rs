@@ -207,7 +207,7 @@ pub fn voronoi(g: &mut Graph, centroids: &Vec<Rc<Object>>, max_distance: f32) ->
                     } else {
                         println!("        2 node.id {:?} edge.id {:?} edge.len {:?} next {:?}", node.id, edge.id, edge.len, next);
                         let start = if edge.ni == node.id { 0.0 } else { edge.len };
-                        let end = if edge.ni == node.id { next } else { 0.0 };
+                        let end = if edge.ni == node.id { edge.len } else { 0.0 };
         
                         let range = VoronoiRange { start, end, centroid_id };
                         println!("        voronoi edge_index {:?} range insert {:?}", edge_index, range);

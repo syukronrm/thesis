@@ -16,9 +16,52 @@ fn as_edge_nj_id(id: i32) -> i32 {
     id + 300000
 }
 
-#[allow(dead_code)]
 fn as_object_id(id: i32) -> i32 {
     id - 100000
+}
+
+#[derive(Debug,Clone)]
+pub struct VoronoiRange {
+    pub start: f32,
+    pub end: f32,
+    pub centroid_id: i32,
+}
+
+#[derive(Debug)]
+pub struct Voronoi(HashMap<EdgeIndex, Vec<VoronoiRange>>);
+
+impl Voronoi {
+    pub fn new() -> Voronoi {
+        Voronoi(HashMap::new())
+    }
+
+    pub fn insert(&mut self, edge: EdgeIndex, range: VoronoiRange) {
+        if let Some(vr) = self.0.get_mut(&edge) {
+            vr.push(range);
+        } else {
+            self.0.insert(edge, vec![range]);
+        }
+    }
+
+    pub fn exists(&self, edge: EdgeIndex) -> bool {
+        if let Some(_) = self.0.get(&edge) {
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn content(self) -> HashMap<EdgeIndex, Vec<VoronoiRange>> {
+        self.0
+    }
+
+    pub fn get(&self, edge_index: EdgeIndex) -> Vec<VoronoiRange> {
+        self.0.get(&edge_index).unwrap().to_vec()
+    }
+
+    pub fn remove(&mut self, edge_index: EdgeIndex) {
+        self.0.remove(&edge_index);
+    }
 }
 
 #[derive(Debug)]
@@ -42,8 +85,7 @@ impl MapOldToNewEdges {
     }
 }
 
-#[allow(dead_code)]
-pub fn graph_with_centroids(g: &mut Graph, centroids: &Vec<Rc<Object>>, map_old_new: &mut MapOldToNewEdges, new_node_ids: &mut Vec<i32>) -> Vec<NodeIndex> {
+fn graph_with_centroids(g: &mut Graph, centroids: &Vec<Rc<Object>>, map_old_new: &mut MapOldToNewEdges, new_node_ids: &mut Vec<i32>) -> Vec<NodeIndex> {
     let mut map_edge_objects: HashMap<i32, Vec<Rc<Object>>> = HashMap::new();
     let mut new_node_indices = Vec::new();
     for c in centroids {
@@ -131,51 +173,7 @@ pub fn graph_with_centroids(g: &mut Graph, centroids: &Vec<Rc<Object>>, map_old_
     new_node_indices
 }
 
-#[derive(Debug,Clone)]
-pub struct VoronoiRange {
-    pub start: f32,
-    pub end: f32,
-    pub centroid_id: i32,
-}
-
-#[derive(Debug)]
-pub struct Voronoi(HashMap<EdgeIndex, Vec<VoronoiRange>>);
-
-impl Voronoi {
-    pub fn new() -> Voronoi {
-        Voronoi(HashMap::new())
-    }
-
-    pub fn insert(&mut self, edge: EdgeIndex, range: VoronoiRange) {
-        if let Some(vr) = self.0.get_mut(&edge) {
-            vr.push(range);
-        } else {
-            self.0.insert(edge, vec![range]);
-        }
-    }
-
-    pub fn exists(&self, edge: EdgeIndex) -> bool {
-        if let Some(_) = self.0.get(&edge) {
-            true
-        } else {
-            false
-        }
-    }
-
-    pub fn content(self) -> HashMap<EdgeIndex, Vec<VoronoiRange>> {
-        self.0
-    }
-
-    pub fn get(&self, edge_index: EdgeIndex) -> Vec<VoronoiRange> {
-        self.0.get(&edge_index).unwrap().to_vec()
-    }
-
-    pub fn remove(&mut self, edge_index: EdgeIndex) {
-        self.0.remove(&edge_index);
-    }
-}
-
-pub fn convert_old_map_edge(g: &mut Graph, map_old_new: MapOldToNewEdges, voronoi: &mut Voronoi, new_node_ids: &Vec<i32>) {
+fn convert_old_map_edge(g: &mut Graph, map_old_new: MapOldToNewEdges, voronoi: &mut Voronoi, new_node_ids: &Vec<i32>) {
     for (edge_index, vec_edge_index) in map_old_new.content().iter() {
         voronoi.remove(*edge_index);
         let mut ranges: Vec<VoronoiRange> = Vec::new();

@@ -66,7 +66,7 @@ fn main() {
         let edge_id = graph.graph.edge_weight(edge).unwrap().id;
         println!("edge id {:?}", edge_id);
         for v in vor {
-            v.print(&graph);
+            println!("{:?}", v);
         }
     }
     println!("{:?}", graph.map_edge_index);

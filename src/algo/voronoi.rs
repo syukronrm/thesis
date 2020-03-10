@@ -36,10 +36,14 @@ impl MapOldToNewEdges {
             self.0.insert(old, vec![new]);
         }
     }
+
+    pub fn content(self) -> HashMap<EdgeIndex, Vec<EdgeIndex>> {
+        self.0
+    }
 }
 
 #[allow(dead_code)]
-pub fn graph_with_centroids(g: &mut Graph, centroids: &Vec<Rc<Object>>, map_old_new: &mut MapOldToNewEdges) -> Vec<NodeIndex> {
+pub fn graph_with_centroids(g: &mut Graph, centroids: &Vec<Rc<Object>>, map_old_new: &mut MapOldToNewEdges, new_node_ids: &mut Vec<i32>) -> Vec<NodeIndex> {
     let mut map_edge_objects: HashMap<i32, Vec<Rc<Object>>> = HashMap::new();
     let mut new_node_indices = Vec::new();
     for c in centroids {
@@ -74,6 +78,8 @@ pub fn graph_with_centroids(g: &mut Graph, centroids: &Vec<Rc<Object>>, map_old_
         let edge_left = Edge::new(as_edge_ni_id(node.id), edge_len_left, left.id, node.id);
         let new_node = g.graph.add_node(node.clone());
         g.add_node_index(node.id, new_node);
+        new_node_ids.push(node.id);
+
         let edge_id = edge_left.id;
         let new_edge_index = g.graph.add_edge(left_index, new_node, edge_left);
         g.add_edge_index(edge_id, new_edge_index);
@@ -125,18 +131,11 @@ pub fn graph_with_centroids(g: &mut Graph, centroids: &Vec<Rc<Object>>, map_old_
     new_node_indices
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct VoronoiRange {
     pub start: f32,
     pub end: f32,
-    pub centroid_id: NodeIndex,
-}
-
-impl VoronoiRange {
-    pub fn print(&self, g: &Graph) {
-        let centroid_id = g.graph.node_weight(self.centroid_id).unwrap().id;
-        println!("Voronoi {{ start: {:?}, end: {:?}, centroid_id: {:?} }}", self.start, self.end, centroid_id);
-    }
+    pub centroid_id: i32,
 }
 
 #[derive(Debug)]
@@ -166,12 +165,78 @@ impl Voronoi {
     pub fn content(self) -> HashMap<EdgeIndex, Vec<VoronoiRange>> {
         self.0
     }
+
+    pub fn get(&self, edge_index: EdgeIndex) -> Vec<VoronoiRange> {
+        self.0.get(&edge_index).unwrap().to_vec()
+    }
+
+    pub fn remove(&mut self, edge_index: EdgeIndex) {
+        self.0.remove(&edge_index);
+    }
+}
+
+pub fn convert_old_map_edge(g: &mut Graph, map_old_new: MapOldToNewEdges, voronoi: &mut Voronoi, new_node_ids: &Vec<i32>) {
+    for (edge_index, vec_edge_index) in map_old_new.content().iter() {
+        voronoi.remove(*edge_index);
+        let mut ranges: Vec<VoronoiRange> = Vec::new();
+        let mut edges = Vec::new();
+        let mut start_dist = 0.0;
+        for new_edge_index in vec_edge_index {
+            edges.push(g.graph.edge_weight(*new_edge_index).unwrap());
+            let existing_ranges = voronoi.get(*new_edge_index);
+
+            for ex_r in existing_ranges {
+                let mut some_range: Option<&mut VoronoiRange> = None;
+                for i in ranges.iter_mut() {
+                    if i.centroid_id == ex_r.centroid_id {
+                        some_range = Some(i);
+                    }
+                }
+                if let Some(range) = some_range {
+                    if range.end == start_dist {
+                        range.end = range.end + ex_r.end;
+                    }
+                } else {
+                    ranges.push(ex_r);
+                }
+            }
+            let e = g.graph.edge_weight(*new_edge_index).unwrap();
+            start_dist = start_dist + e.len;
+        }
+
+        // insert merged voronoi range
+        for range in ranges {
+            voronoi.insert(*edge_index, range);
+        }
+
+        // invalidate used edges
+        for new_edge_index in vec_edge_index {
+            let edge = g.graph.remove_edge(*new_edge_index).unwrap();
+            let mut map_edge_index = g.map_edge_index.borrow_mut();
+            map_edge_index.remove(&edge.id);
+            voronoi.remove(*new_edge_index);
+        }
+
+        // invalidate used nodes
+        for node_id in new_node_ids {
+            {
+                let map_node_index = g.map_node_index.borrow();
+                let node_index = map_node_index.get(node_id).unwrap();
+                g.graph.remove_node(*node_index);
+            }
+            {
+                let mut map_node_index = g.map_node_index.borrow_mut();
+                map_node_index.remove(node_id);
+            }
+        }
+    }
 }
 
 #[allow(dead_code)]
 pub fn voronoi(g: &mut Graph, centroids: &Vec<Rc<Object>>, max_distance: f32) -> Voronoi {
     let mut map_old_new = MapOldToNewEdges::new();
-    let new_node_indices = graph_with_centroids(g, centroids, &mut map_old_new);
+    let mut new_node_ids = Vec::new();
+    let new_node_indices = graph_with_centroids(g, centroids, &mut map_old_new, &mut new_node_ids);
     let graph = &g.graph;
     let mut voronoi: Voronoi = Voronoi::new();
 
@@ -199,6 +264,7 @@ pub fn voronoi(g: &mut Graph, centroids: &Vec<Rc<Object>>, max_distance: f32) ->
         dist,
     }) = heap.pop()
     {
+        let c_object_id =  as_object_id(g.graph.node_weight(centroid_id).unwrap().id);
         println!("heap.pop {:?} centroid_id {:?}", node_index, centroid_id);
         let (existing_distance, _) = dist_map.get(&node_index).unwrap();
         if dist > *existing_distance {
@@ -233,15 +299,21 @@ pub fn voronoi(g: &mut Graph, centroids: &Vec<Rc<Object>>, max_distance: f32) ->
                                 edge.len - (max_distance - dist)
                             };
             
-                            let range = VoronoiRange { start, end, centroid_id };
+                            let range = VoronoiRange {
+                                start: start.max(end),
+                                end: start.min(end),
+                                centroid_id: c_object_id,
+                            };
                             println!("        voronoi edge_index {:?} range insert {:?}", edge_index, range);
                             voronoi.insert(edge_index, range);
                         } else {
                             println!("        2 node.id {:?} edge.id {:?} edge.len {:?} next {:?}", node.id, edge.id, edge.len, next);
-                            let start = if edge.ni == node.id { 0.0 } else { edge.len };
-                            let end = if edge.ni == node.id { edge.len } else { 0.0 };
             
-                            let range = VoronoiRange { start, end, centroid_id };
+                            let range = VoronoiRange {
+                                start: 0.0,
+                                end: edge.len,
+                                centroid_id: c_object_id,
+                            };
                             println!("        voronoi edge_index {:?} range insert {:?}", edge_index, range);
                             voronoi.insert(edge_index, range);
                         }
@@ -255,14 +327,15 @@ pub fn voronoi(g: &mut Graph, centroids: &Vec<Rc<Object>>, max_distance: f32) ->
                     let range = VoronoiRange {
                         start: 0.0,
                         end: center_dist,
-                        centroid_id
+                        centroid_id: c_object_id,
                     };
                     voronoi.insert(edge_index, range);
 
+                    let c_next_id = as_object_id(g.graph.node_weight(next_centroid.unwrap()).unwrap().id);
                     let range = VoronoiRange {
                         start: center_dist,
                         end: edge.len,
-                        centroid_id: next_centroid.unwrap(),
+                        centroid_id: c_next_id,
                     };
                     voronoi.insert(edge_index, range);
                 } else {
@@ -270,20 +343,23 @@ pub fn voronoi(g: &mut Graph, centroids: &Vec<Rc<Object>>, max_distance: f32) ->
                     let range = VoronoiRange {
                         start: center_dist,
                         end: edge.len,
-                        centroid_id
+                        centroid_id: c_object_id,
                     };
                     voronoi.insert(edge_index, range);
 
+                    let c_next_id = as_object_id(g.graph.node_weight(next_centroid.unwrap()).unwrap().id);
                     let range = VoronoiRange {
                         start: 0.0,
                         end: center_dist,
-                        centroid_id: next_centroid.unwrap(),
+                        centroid_id: c_next_id,
                     };
                     voronoi.insert(edge_index, range);
                 }
             }
         }
     }
+
+    convert_old_map_edge(g, map_old_new, &mut voronoi, &new_node_ids);
 
     voronoi
 }
@@ -323,7 +399,8 @@ mod tests {
 
         let mut g = Graph::new(graph);
         let mut map_old_new = MapOldToNewEdges::new();
-        graph_with_centroids(&mut g, &objects, &mut map_old_new);
+        let mut new_node_ids = Vec::new();
+        graph_with_centroids(&mut g, &objects, &mut map_old_new, &mut new_node_ids);
         assert_eq!(g.graph.edge_indices().count(), 4);
         assert_eq!(g.graph.node_indices().count(), 4);
 

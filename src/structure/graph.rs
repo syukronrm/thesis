@@ -1,6 +1,5 @@
 use crate::structure::PetgraphNodeEdge;
 
-use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -14,45 +13,65 @@ type ObjectId = i32;
 
 pub struct Graph {
     pub graph: PetgraphNodeEdge,
-    pub objects: RefCell<HashMap<ObjectId, Rc<Object>>>,
-    pub map_node_index: RefCell<HashMap<NodeId, NodeIndex>>,
-    pub map_edge_index: RefCell<HashMap<EdgeId, EdgeIndex>>,
+    pub objects: HashMap<ObjectId, Rc<Object>>,
+    pub map_node_index: HashMap<NodeId, NodeIndex>,
+    pub map_edge_index: HashMap<EdgeId, EdgeIndex>,
+    pub queries: Multiqueries
 }
 
 impl Graph {
     pub fn new(graph: PetgraphNodeEdge) -> Graph {
-        let s = Graph {
+        let mut s = Graph {
             graph,
-            map_node_index: RefCell::new(HashMap::new()),
-            map_edge_index: RefCell::new(HashMap::new()),
-            objects: RefCell::new(HashMap::new()),
+            map_node_index: HashMap::new(),
+            map_edge_index: HashMap::new(),
+            objects: HashMap::new(),
+            queries: Multiqueries::new(),
         };
         s.recompute_node_index();
         s.recompute_edge_index();
         s
     }
 
-    fn recompute_node_index(&self) {
-        self.map_node_index.replace(
-            self.graph
-                .node_indices()
-                .map(|index| (self.graph[index].id, index))
-                .collect(),
-        );
+    pub fn insert(&self, object: Rc<Object>) {
+        let pairs = self.queries.pairs();
+        for pair in pairs {
+
+        }
     }
 
-    fn recompute_edge_index(&self) {
-        self.map_edge_index.replace(
-            self.graph
-                .edge_indices()
-                .map(|index| (self.graph[index].id, index))
-                .collect(),
-        );
+    pub fn assign_queries(&mut self, multiqueries: Multiqueries) {
+        self.queries = multiqueries;
+    }
+
+    pub fn dominator_and_dominated_objects(&self, pair: Pair, object: Rc<Object>) {
+        let mut dist_map = {
+            let mut map: HashMap<NodeIndex, (f32, Option<NodeIndex>)> = HashMap::new();
+            self.graph.node_indices().into_iter().for_each(|x| {
+                map.insert(x, (std::f32::MAX, None));
+            });
+            map
+        };
+
+        let edge_id = object.edge_id;
+    }
+
+    fn recompute_node_index(&mut self) {
+        self.map_node_index = self.graph
+                                .node_indices()
+                                .map(|index| (self.graph[index].id, index))
+                                .collect();
+    }
+
+    fn recompute_edge_index(&mut self) {
+        self.map_edge_index = self.graph
+                                .edge_indices()
+                                .map(|index| (self.graph[index].id, index))
+                                .collect();
     }
 
     pub fn edge_index(&self, edge_id: i32) -> EdgeIndex {
-        let map_edge_index = self.map_edge_index.borrow();
-        *map_edge_index.get(&edge_id).unwrap()
+        *self.map_edge_index.get(&edge_id).unwrap()
     }
 
     pub fn edge(&self, edge_id: i32) -> &Edge {
@@ -61,20 +80,17 @@ impl Graph {
     }
 
     pub fn node_index(&self, node_id: i32) -> NodeIndex {
-        let map_node_index = self.map_node_index.borrow();
-        *map_node_index.get(&node_id).unwrap()
+        *self.map_node_index.get(&node_id).unwrap()
     }
 
     pub fn node(&self, node_id: i32) -> &Node {
-        let map_node_index = self.map_node_index.borrow();
-        let node_index = map_node_index.get(&node_id).unwrap();
+        let node_index = self.map_node_index.get(&node_id).unwrap();
         self.graph.node_weight(*node_index).unwrap()
     }
 
     #[allow(dead_code)]
     pub fn nodes_from_edge_id(&self, edge_id: EdgeId) -> Vec<i32> {
-        let map_edge_index = self.map_edge_index.borrow();
-        let edge_index = map_edge_index.get(&edge_id).unwrap();
+        let edge_index = self.map_edge_index.get(&edge_id).unwrap();
         let edge = self.graph.edge_weight(*edge_index).unwrap();
         vec![edge.ni, edge.nj]
     }
@@ -92,41 +108,37 @@ impl Graph {
         object_ids
             .into_iter()
             .map(move |oid| {
-                let objects = self.objects.borrow();
-                objects.get(&oid).unwrap().clone()
+                self.objects.get(&oid).unwrap().clone()
             })
             .rev()
             .collect()
     }
 
     #[allow(dead_code)]
-    pub fn insert_object(&self, object: Rc<Object>) {
-        let mut objects = self.objects.borrow_mut();
-        objects.insert(object.id, object.clone());
+    pub fn insert_object(&mut self, object: Rc<Object>) {
+        self.objects.insert(object.id, object.clone());
     }
 
     #[allow(dead_code)]
-    pub fn insert_objects(&self, objects: Vec<Rc<Object>>) {
+    pub fn insert_objects(&mut self, objects: Vec<Rc<Object>>) {
         for o in objects {
             self.insert_object(o);
         }
     }
 
-    pub fn add_node_index(&self, node_id: i32, node_index: NodeIndex) {
-        let mut map = self.map_node_index.borrow_mut();
-        if let Some(val) = map.get_mut(&node_id) {
+    pub fn add_node_index(&mut self, node_id: i32, node_index: NodeIndex) {
+        if let Some(val) = self.map_node_index.get_mut(&node_id) {
             *val = node_index;
         } else {
-            map.insert(node_id, node_index);
+            self.map_node_index.insert(node_id, node_index);
         }
     }
 
-    pub fn add_edge_index(&self, edge_id: i32, edge_index: EdgeIndex) {
-        let mut map = self.map_edge_index.borrow_mut();
-        if let Some(val) = map.get_mut(&edge_id) {
+    pub fn add_edge_index(&mut self, edge_id: i32, edge_index: EdgeIndex) {
+        if let Some(val) = self.map_edge_index.get_mut(&edge_id) {
             *val = edge_index;
         } else {
-            map.insert(edge_id, edge_index);
+            self.map_edge_index.insert(edge_id, edge_index);
         }
     }
 }

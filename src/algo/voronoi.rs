@@ -210,22 +210,15 @@ fn convert_old_map_edge(g: &mut Graph, map_old_new: MapOldToNewEdges, voronoi: &
         // invalidate used edges
         for new_edge_index in vec_edge_index {
             let edge = g.graph.remove_edge(*new_edge_index).unwrap();
-            let mut map_edge_index = g.map_edge_index.borrow_mut();
-            map_edge_index.remove(&edge.id);
+            g.map_edge_index.remove(&edge.id);
             voronoi.remove(*new_edge_index);
         }
 
         // invalidate used nodes
         for node_id in new_node_ids {
-            {
-                let map_node_index = g.map_node_index.borrow();
-                let node_index = map_node_index.get(node_id).unwrap();
-                g.graph.remove_node(*node_index);
-            }
-            {
-                let mut map_node_index = g.map_node_index.borrow_mut();
-                map_node_index.remove(node_id);
-            }
+            let node_index = g.map_node_index.get(node_id).unwrap();
+            g.graph.remove_node(*node_index);
+            g.map_node_index.remove(node_id);
         }
     }
 }

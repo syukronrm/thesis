@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use std::fmt;
 use std::rc::Rc;
 
+use crate::structure::query::Pair as PairAttr;
+
 type DimensionIndex = i8;
 type ObjectId = i32;
 type EdgeId = i32;
@@ -47,6 +49,12 @@ impl ScopeMethods for Scope {
     }
 }
 
+pub enum Domination {
+    Dominator,
+    Dominated,
+    Neutral,
+}
+
 #[derive(Clone, Debug)]
 pub struct Object {
     pub id: ObjectId,
@@ -63,6 +71,26 @@ impl Object {
             attr,
             dist,
             edge_id,
+        }
+    }
+
+    pub fn dominate_pair(&self, object: Rc<Object>, pair: &PairAttr) -> Domination {
+        if self.attr[pair.0] >= object.attr[pair.0]
+            && self.attr[pair.1] >= object.attr[pair.1]
+            && (
+                self.attr[pair.0] > object.attr[pair.0]
+                || self.attr[pair.1] > object.attr[pair.1]
+            ) {
+            Domination::Dominator
+        } else if self.attr[pair.0] <= object.attr[pair.0]
+            && self.attr[pair.1] <= object.attr[pair.1]
+            && (
+                self.attr[pair.0] < object.attr[pair.0]
+                || self.attr[pair.1] < object.attr[pair.1]
+            ) {
+            Domination::Dominated
+        } else {
+            Domination::Neutral
         }
     }
 }
@@ -97,7 +125,7 @@ pub struct Edge {
     pub ni: i32,
     pub nj: i32,
     pub len: f32,
-    objects: RefCell<Vec<Object>>,
+    pub objects: RefCell<Vec<Rc<Object>>>,
     object_scope: Scope,
     sky_scope: Scope,
     two_sky_scope: Scope,

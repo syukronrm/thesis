@@ -2,6 +2,8 @@ use crate::structure::PetgraphNodeEdge;
 
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::cmp::Ordering;
+use std::collections::BinaryHeap;
 
 use crate::structure::edge::Object;
 use crate::structure::*;
@@ -16,7 +18,8 @@ pub struct Graph {
     pub objects: HashMap<ObjectId, Rc<Object>>,
     pub map_node_index: HashMap<NodeId, NodeIndex>,
     pub map_edge_index: HashMap<EdgeId, EdgeIndex>,
-    pub queries: Multiqueries
+    pub queries: Multiqueries,
+    max_dist: f32,
 }
 
 impl Graph {
@@ -27,16 +30,19 @@ impl Graph {
             map_edge_index: HashMap::new(),
             objects: HashMap::new(),
             queries: Multiqueries::new(),
+            max_dist: 10.0,
         };
         s.recompute_node_index();
         s.recompute_edge_index();
         s
     }
 
-    pub fn insert(&self, object: Rc<Object>) {
+    #[allow(dead_code,unused_variables)]
+    pub fn insert(&mut self, object: Rc<Object>) {
+        self.insert_object_to_graph(object.clone());
         let pairs = self.queries.pairs();
         for pair in pairs {
-
+            let (dominator, dominated) = self.dominator_and_dominated_objects(pair, object.clone());
         }
     }
 
@@ -44,16 +50,91 @@ impl Graph {
         self.queries = multiqueries;
     }
 
-    pub fn dominator_and_dominated_objects(&self, pair: Pair, object: Rc<Object>) {
+    // get dominated and dominator objects measured in pair of dimension
+    fn dominator_and_dominated_objects(&self, pair: Pair, object: Rc<Object>) -> (Vec<Rc<Object>>, Vec<Rc<Object>>) {
         let mut dist_map = {
-            let mut map: HashMap<NodeIndex, (f32, Option<NodeIndex>)> = HashMap::new();
+            let mut map: HashMap<NodeIndex, f32> = HashMap::new();
             self.graph.node_indices().into_iter().for_each(|x| {
-                map.insert(x, (std::f32::MAX, None));
+                map.insert(x, std::f32::MAX);
             });
             map
         };
 
+        let mut dominator = Vec::new();
+        let mut dominated = Vec::new();
+
+        let mut queue = BinaryHeap::new();
+
         let edge_id = object.edge_id;
+        let edge_index = self.map_edge_index.get(&edge_id).unwrap();
+        let edge = self.graph.edge_weight(*edge_index).unwrap();
+
+        for o in edge.objects.borrow().iter() {
+            match object.dominate_pair(o.clone(), &pair) {
+                Domination::Dominator => dominated.push(o.clone()),
+                Domination::Dominated => dominator.push(o.clone()),
+                _ => (),
+            }
+        }
+
+        match self.graph.edge_endpoints(*edge_index) {
+            Some((ni, nj)) => {
+                let dist = dist_map.get_mut(&ni).unwrap();
+                *dist = edge.len * object.dist;
+                queue.push(StateGraph {
+                    cost: *dist,
+                    node_index: ni,
+                });
+
+                let dist = dist_map.get_mut(&nj).unwrap();
+                *dist = edge.len * (1.0 - object.dist);
+                queue.push(StateGraph {
+                    cost: *dist,
+                    node_index: nj,
+                });
+            },
+            _ => panic!("Node not found!")
+        };
+
+        while let Some(StateGraph { cost, node_index }) = queue.pop() {
+            let neighbors = self.graph.neighbors(node_index);
+
+            let dist = dist_map.get(&node_index).unwrap();
+            if cost > *dist { continue; }
+
+            for neighbor in neighbors {
+                let edge_index = self.graph.find_edge(node_index, neighbor).unwrap();
+                let edge = self.graph.edge_weight(edge_index).unwrap();
+                let next = cost + edge.len;
+                if next < self.max_dist * 2.0 {
+                    queue.push(StateGraph {
+                        cost: next,
+                        node_index: neighbor
+                    });
+
+                    for o in edge.objects.borrow().iter() {
+                        match object.dominate_pair(o.clone(), &pair) {
+                            Domination::Dominator => dominated.push(o.clone()),
+                            Domination::Dominated => dominator.push(o.clone()),
+                            _ => (),
+                        }
+                    }
+
+                    let dist = dist_map.get_mut(&neighbor).unwrap();
+                    *dist = next;
+                }
+            }
+        }
+
+        (dominator, dominated)
+    }
+
+    // insert object to graph and it's edge
+    fn insert_object_to_graph(&mut self, object: Rc<Object>) {
+        self.objects.insert(object.id, object.clone());
+        let edge_index = self.map_edge_index.get(&object.edge_id).unwrap();
+        let edge = self.graph.edge_weight(*edge_index).unwrap();
+        edge.objects.borrow_mut().push(object.clone());
     }
 
     fn recompute_node_index(&mut self) {
@@ -142,3 +223,42 @@ impl Graph {
         }
     }
 }
+
+#[derive(Copy, Clone)]
+struct StateGraph {
+    cost: f32,
+    node_index: NodeIndex,
+}
+
+impl Ord for StateGraph {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if self.cost.is_nan() || other.cost.is_nan() {
+            panic!("State.cost is NaN!");
+        }
+
+        if self.cost < other.cost {
+            Ordering::Less
+        } else if self.cost > other.cost {
+            Ordering::Greater
+        } else {
+            Ordering::Equal
+        }
+    }
+}
+
+impl PartialOrd for StateGraph {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        other.cost.partial_cmp(&self.cost)
+    }
+}
+
+impl PartialEq for StateGraph {
+    fn eq(&self, other: &Self) -> bool {
+        if self.cost.is_nan() || other.cost.is_nan() {
+            panic!("State.cost is NaN!");
+        }
+        self.cost == other.cost
+    }
+}
+
+impl Eq for StateGraph {}

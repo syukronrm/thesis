@@ -40,8 +40,11 @@ impl Graph {
     #[allow(dead_code,unused_variables)]
     pub fn insert(&mut self, object: Rc<Object>) {
         let pairs = self.queries.pairs();
+        println!("{:?}", pairs);
         for pair in pairs {
             let (dominator, dominated) = self.dominator_and_dominated_objects(pair, object.clone());
+            println!("DOMINATOR {:?}", dominator);
+            println!("DOMINATED {:?}", dominated);
         }
         self.insert_object_to_graph(object.clone());
     }

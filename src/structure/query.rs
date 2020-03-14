@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct Pair(pub usize, pub usize);
 
 pub struct Multiqueries(Vec<Vec<usize>>);

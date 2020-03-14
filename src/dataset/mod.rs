@@ -2,6 +2,8 @@ use csv::ReaderBuilder;
 use std::path::PathBuf;
 use std::rc::Rc;
 
+use crate::structure::*;
+
 #[derive(Debug)]
 pub struct Node {
     pub id: i32,
@@ -33,30 +35,8 @@ pub enum Action {
     Deletion,
 }
 
-#[derive(Debug)]
-pub struct NewObject {
-    id: i32,
-    attr: Vec<f32>,
-    dist: f32,
-    edge_id: i32,
-    action: Action,
-}
-
-impl NewObject {
-    #[allow(dead_code)]
-    pub fn new(id: i32, attr: Vec<f32>, dist: f32, edge_id: i32, action: Action) -> NewObject {
-        NewObject {
-            id,
-            attr,
-            dist,
-            edge_id,
-            action,
-        }
-    }
-}
-
 #[allow(dead_code)]
-pub fn read_object_csv(object_path: &PathBuf, d: usize) -> Vec<Rc<NewObject>> {
+pub fn read_object_csv(object_path: &PathBuf, d: usize) -> Vec<(Rc<Object>, Action)> {
     let mut vec = Vec::new();
 
     let mut rdr = ReaderBuilder::new()
@@ -76,14 +56,14 @@ pub fn read_object_csv(object_path: &PathBuf, d: usize) -> Vec<Rc<NewObject>> {
             let val = record.get(4 + i).unwrap().parse::<f32>().unwrap();
             attr.push(val);
         }
-        let new_object = Rc::new(NewObject{
+        let new_object = Rc::new(Object {
             id,
             attr,
             dist,
-            edge_id,
-            action: if action == 1 { Action::Insertion } else { Action::Deletion }
+            edge_id
         });
-        vec.push(new_object);
+        let action = if action == 1 { Action::Insertion } else { Action::Deletion };
+        vec.push((new_object, action));
     }
 
     vec
@@ -226,8 +206,8 @@ mod tests {
         let project_path = Path::new(env!("CARGO_MANIFEST_DIR"));
         let object_path = project_path.join("dataset/test01/object.txt");
         let objects = read_object_csv(&object_path, 4);
-        let o1 = objects.get(0).unwrap();
-        let o2 = objects.get(1).unwrap();
+        let (o1, _) = objects.get(0).unwrap();
+        let (o2, _) = objects.get(1).unwrap();
         assert_eq!(o1.id, 1);
         assert_eq!(o2.id, 2);
     }

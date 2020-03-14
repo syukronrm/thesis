@@ -30,7 +30,7 @@ impl Graph {
             map_edge_index: HashMap::new(),
             objects: HashMap::new(),
             queries: Multiqueries::new(),
-            max_dist: 10.0,
+            max_dist: 100.0,
         };
         s.recompute_node_index();
         s.recompute_edge_index();
@@ -39,11 +39,11 @@ impl Graph {
 
     #[allow(dead_code,unused_variables)]
     pub fn insert(&mut self, object: Rc<Object>) {
-        self.insert_object_to_graph(object.clone());
         let pairs = self.queries.pairs();
         for pair in pairs {
             let (dominator, dominated) = self.dominator_and_dominated_objects(pair, object.clone());
         }
+        self.insert_object_to_graph(object.clone());
     }
 
     pub fn assign_queries(&mut self, multiqueries: Multiqueries) {
@@ -106,7 +106,8 @@ impl Graph {
                 let edge_index = self.graph.find_edge(node_index, neighbor).unwrap();
                 let edge = self.graph.edge_weight(edge_index).unwrap();
                 let next = cost + edge.len;
-                if next < self.max_dist * 2.0 {
+                let dist = dist_map.get(&neighbor).unwrap();
+                if next < *dist && next < self.max_dist * 2.0 {
                     queue.push(StateGraph {
                         cost: next,
                         node_index: neighbor

@@ -26,9 +26,9 @@ impl Graph {
     pub fn new(graph: PetgraphNodeEdge) -> Graph {
         let mut s = Graph {
             graph,
-            map_node_index: HashMap::new(),
-            map_edge_index: HashMap::new(),
-            objects: HashMap::new(),
+            map_node_index: Default::default(),
+            map_edge_index: Default::default(),
+            objects: Default::default(),
             queries: Multiqueries::new(),
             max_dist: 100.0,
         };

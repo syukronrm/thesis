@@ -1,7 +1,6 @@
 use petgraph::graph::NodeIndex;
 use std::cmp::Ordering;
 
-#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub struct State {
     pub node_index: NodeIndex,

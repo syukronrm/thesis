@@ -51,10 +51,6 @@ impl Voronoi {
         }
     }
 
-    pub fn content(self) -> HashMap<EdgeIndex, Vec<VoronoiRange>> {
-        self.0
-    }
-
     pub fn get(&self, edge_index: EdgeIndex) -> Vec<VoronoiRange> {
         self.0.get(&edge_index).unwrap().to_vec()
     }

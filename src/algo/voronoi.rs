@@ -94,14 +94,14 @@ fn graph_with_centroids(g: &mut Graph, centroids: &Vec<Rc<Object>>, map_old_new:
 
     let mut insert_centroid_as_node = |g: &mut Graph,
                                    edge_index: EdgeIndex,
-                                   left: &Node,
-                                   right: &Node,
+                                   left: &NodeGraph,
+                                   right: &NodeGraph,
                                    object: &Object,
                                    lng: f32,
                                    lat: f32,
                                    is_last|
      -> NodeIndex {
-        let node = Node {
+        let node = NodeGraph {
             id: as_node_id(object.id),
             lng,
             lat,
@@ -113,7 +113,7 @@ fn graph_with_centroids(g: &mut Graph, centroids: &Vec<Rc<Object>>, map_old_new:
             let y = left.lat - node.lat;
             (x.powi(2) + y.powi(2)).sqrt()
         };
-        let edge_left = Edge::new(as_edge_ni_id(node.id), edge_len_left, left.id, node.id);
+        let edge_left = EdgeGraph::new(as_edge_ni_id(node.id), edge_len_left, left.id, node.id);
         let new_node = g.graph.add_node(node.clone());
         g.add_node_index(node.id, new_node);
         new_node_ids.push(node.id);
@@ -130,7 +130,7 @@ fn graph_with_centroids(g: &mut Graph, centroids: &Vec<Rc<Object>>, map_old_new:
                 let y = right.lat - node.lat;
                 (x.powi(2) + y.powi(2)).sqrt()
             };
-            let edge_right = Edge::new(as_edge_nj_id(node.id), edge_len_right, node.id, right.id);
+            let edge_right = EdgeGraph::new(as_edge_nj_id(node.id), edge_len_right, node.id, right.id);
             let edge_id = edge_right.id;
             let new_edge_index = g.graph.add_edge(new_node, right_index, edge_right);
             g.add_edge_index(edge_id, new_edge_index);
@@ -358,17 +358,17 @@ mod tests {
     #[test]
     fn test_graph_with_centroids() {
         let mut graph: PetgraphNodeEdge = petgraph::stable_graph::StableGraph::with_capacity(0, 0);
-        let n1 = graph.add_node(Node {
+        let n1 = graph.add_node(NodeGraph {
             id: 1,
             lng: 0.0,
             lat: 0.0,
         });
-        let n2 = graph.add_node(Node {
+        let n2 = graph.add_node(NodeGraph {
             id: 2,
             lng: 3.0,
             lat: 4.0,
         });
-        graph.add_edge(n1, n2, Edge::new(1, 5.0, 1, 2));
+        graph.add_edge(n1, n2, EdgeGraph::new(1, 5.0, 1, 2));
         let objects = vec![
             Rc::new(Object {
                 id: 1,

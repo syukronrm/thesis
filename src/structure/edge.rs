@@ -31,7 +31,7 @@ impl ScopeMethods for Scope {
                 pair.insert(range.object.id, vec![range]);
             }
         } else {
-            let new_pair = Edge::new_pair(range);
+            let new_pair = EdgeGraph::new_pair(range);
             scope.insert(dimensions, new_pair);
         };
     }
@@ -120,7 +120,7 @@ impl fmt::Debug for Range {
 }
 
 #[derive(Debug, Clone)]
-pub struct Edge {
+pub struct EdgeGraph {
     pub id: i32,
     pub ni: i32,
     pub nj: i32,
@@ -133,9 +133,9 @@ pub struct Edge {
     k_sky_scope: Scope,
 }
 
-impl Edge {
-    pub fn new(id: i32, len: f32, ni: i32, nj: i32) -> Edge {
-        Edge {
+impl EdgeGraph {
+    pub fn new(id: i32, len: f32, ni: i32, nj: i32) -> EdgeGraph {
+        EdgeGraph {
             id,
             len,
             ni,
@@ -161,8 +161,8 @@ mod test {
     use super::*;
     use float_cmp::approx_eq;
 
-    fn create_edge() -> Edge {
-        let edge = Edge::new(1, 100.0, 100, 101);
+    fn create_edge() -> EdgeGraph {
+        let edge = EdgeGraph::new(1, 100.0, 100, 101);
         let object = Object {
             id: 1,
             attr: vec![1.0, 2.0],
@@ -205,7 +205,7 @@ mod test {
             dist: 10.0,
             edge_id: 1,
         };
-        let pair = Edge::new_pair(Range {
+        let pair = EdgeGraph::new_pair(Range {
             start: 1.0,
             end: 2.0,
             object: Rc::new(object),

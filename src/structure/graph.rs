@@ -159,7 +159,7 @@ impl Graph {
         *self.map_edge_index.get(&edge_id).unwrap()
     }
 
-    pub fn edge(&self, edge_id: i32) -> &Edge {
+    pub fn edge(&self, edge_id: i32) -> &EdgeGraph {
         let edge_index = self.edge_index(edge_id);
         self.graph.edge_weight(edge_index).unwrap()
     }
@@ -168,7 +168,7 @@ impl Graph {
         *self.map_node_index.get(&node_id).unwrap()
     }
 
-    pub fn node(&self, node_id: i32) -> &Node {
+    pub fn node(&self, node_id: i32) -> &NodeGraph {
         let node_index = self.map_node_index.get(&node_id).unwrap();
         self.graph.node_weight(*node_index).unwrap()
     }

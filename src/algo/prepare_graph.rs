@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::rc::Rc;
 
-use crate::dataset::{Edge as DataEdge, Node as DataNode};
-use crate::structure::{Edge, Graph, Node, PetgraphNodeEdge};
+use crate::dataset::{Edge, Node};
+use crate::structure::{EdgeGraph, Graph, NodeGraph, PetgraphNodeEdge};
 
 use crate::dataset::load_edges;
 
@@ -15,16 +15,16 @@ pub fn create_initial_graph(dataset_dir: PathBuf, node_csv: &str, edge_csv: &str
 }
 
 #[allow(dead_code)]
-fn prepare_graph(edges: Vec<DataEdge>) -> Graph {
+fn prepare_graph(edges: Vec<Edge>) -> Graph {
     let mut graph: PetgraphNodeEdge = StableGraph::with_capacity(0, 0);
     let mut added_node_ids = HashMap::new();
 
     let mut get_node_index =
-        move |node: &Rc<DataNode>, graph: &mut PetgraphNodeEdge| match added_node_ids.get(&node.id)
+        move |node: &Rc<Node>, graph: &mut PetgraphNodeEdge| match added_node_ids.get(&node.id)
         {
             Some(node_index) => *node_index,
             None => {
-                let node_index = graph.add_node(Node {
+                let node_index = graph.add_node(NodeGraph {
                     id: node.id,
                     lng: node.lng,
                     lat: node.lat,
@@ -40,7 +40,7 @@ fn prepare_graph(edges: Vec<DataEdge>) -> Graph {
         graph.add_edge(
             graph_ni,
             graph_nj,
-            Edge::new(edge.id, edge.len, edge.ni.id, edge.nj.id),
+            EdgeGraph::new(edge.id, edge.len, edge.ni.id, edge.nj.id),
         );
     }
 

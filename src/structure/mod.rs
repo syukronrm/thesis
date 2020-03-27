@@ -9,8 +9,8 @@ pub mod query;
 
 pub use edge::*;
 pub use graph::Graph;
-pub use node::Node;
+pub use node::NodeGraph;
 pub use voronoi::state::State;
 pub use query::{Multiqueries, Pair};
 
-pub type PetgraphNodeEdge = PetGraph<Node, Edge, Undirected>;
+pub type PetgraphNodeEdge = PetGraph<NodeGraph, EdgeGraph, Undirected>;

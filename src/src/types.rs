@@ -31,3 +31,11 @@ pub enum Action {
     Insertion,
     Deletion,
 }
+
+pub struct DataObject {
+    id: ObjectId,
+    attr: Vec<f32>,
+    dist: f32, // distance from Node I
+    edge_id: EdgeId,
+    action: Action,
+}

@@ -38,9 +38,15 @@ pub enum Action {
 
 /// Raw object data from dataset
 pub struct DataObject {
-    id: ObjectId,
-    attr: Vec<f32>,
-    dist: f32, // distance from Node I
-    edge_id: EdgeId,
-    action: Action,
+    pub id: ObjectId,
+    pub attr: Vec<f32>,
+    pub dist: f32, // distance from Node I
+    pub edge_id: EdgeId,
+    pub action: Action,
+}
+
+/// Raw query data from dataset
+pub struct Query {
+    k: K,
+    dimentions: Vec<DimensionIndex>,
 }

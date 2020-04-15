@@ -3,19 +3,25 @@ use std::sync::Arc;
 
 use crate::prelude::*;
 
+/// Centralized reader of all datasets
 pub struct Reader {
-    config: AppConfig,
+    config: Arc<AppConfig>,
 }
 
 impl Reader {
+    /// Create new Reader
+    pub fn new(config: Arc<AppConfig>) -> Self {
+        Reader { config }
+    }
+
     /// Read object from CSV file
-    #[allow(dead_code)]
     pub fn read_object_csv(self) -> Vec<Arc<DataObject>> {
+        let config = self.config.clone();
         let mut vec = Vec::new();
 
         let mut rdr = ReaderBuilder::new()
             .delimiter(b' ')
-            .from_path(self.config.paths.object_path)
+            .from_path(config.paths.object_path.as_path())
             .unwrap();
 
         for result in rdr.records() {
@@ -45,5 +51,23 @@ impl Reader {
         }
 
         vec
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn read_object_csv() {
+        let conf: AppConfig = Default::default();
+        let conf = Arc::new(conf);
+        let reader = Reader::new(conf);
+        let objects = reader.read_object_csv();
+
+        let o1: &Arc<DataObject> = objects.get(0).unwrap();
+        let o2: &Arc<DataObject> = objects.get(1).unwrap();
+        assert_eq!(o1.id, 1);
+        assert_eq!(o2.id, 2);
     }
 }

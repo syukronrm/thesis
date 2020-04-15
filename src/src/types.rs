@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use crate::prelude::*;
 
+/// Raw node data from dataset
 #[derive(Debug)]
 pub struct DataNode {
     pub id: NodeId,
@@ -9,6 +10,7 @@ pub struct DataNode {
     pub lat: f32,
 }
 
+/// Raw edge data from dataset
 #[derive(Debug)]
 pub struct DataEdge {
     pub id: EdgeId,
@@ -18,6 +20,7 @@ pub struct DataEdge {
 }
 
 impl DataEdge {
+    /// Create new raw edge
     fn new(id: EdgeId, ni: Rc<DataNode>, nj: Rc<DataNode>) -> DataEdge {
         let diff_lng = ni.lng - nj.lng;
         let diff_lat = ni.lat - nj.lat;
@@ -26,12 +29,14 @@ impl DataEdge {
     }
 }
 
+/// Action for new object
 #[derive(Debug)]
 pub enum Action {
     Insertion,
     Deletion,
 }
 
+/// Raw object data from dataset
 pub struct DataObject {
     id: ObjectId,
     attr: Vec<f32>,

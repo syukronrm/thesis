@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+/// Global configuration
 #[derive(Debug)]
 pub struct AppConfig {
     max_dist: f32,

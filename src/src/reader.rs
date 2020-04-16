@@ -88,7 +88,6 @@ impl Reader {
 
         let mut rdr = ReaderBuilder::new()
             .delimiter(b' ')
-            .has_headers(false)
             .from_path(self.config.paths.edge_path.as_path())
             .unwrap();
 
@@ -122,6 +121,42 @@ impl Reader {
         vec
     }
 
+    pub fn read_query_csv(&self) -> Vec<Arc<Query>> {
+        let mut vec = Vec::new();
+
+        let mut rdr = ReaderBuilder::new()
+            .delimiter(b' ')
+            .from_path(self.config.paths.query_path.as_path())
+            .unwrap();
+
+        for result in rdr.records() {
+            let record = result.unwrap();
+            let k = record
+                .get(0)
+                .expect("Failed to get index 0")
+                .parse::<K>()
+                .expect("Failed to get k value");
+
+            let mut dimensions = Vec::new();
+            let mut i = 1;
+            while let Some(str) = record.get(i) {
+                if str.is_empty() {
+                    break;
+                }
+
+                let d = str
+                    .parse::<DimensionIndex>()
+                    .expect("Failed to parse dimension");
+                dimensions.push(d);
+                i += 1;
+            }
+
+            let query = Query { k, dimensions };
+            vec.push(Arc::new(query));
+        }
+
+        vec
+    }
 }
 
 #[cfg(test)]
@@ -155,11 +190,25 @@ mod tests {
         assert_eq!(n2.id, 2);
 
         let edges = reader.read_edge_csv(&nodes);
-        
+
         let e1 = edges.get(0).unwrap();
         let e2 = edges.get(1).unwrap();
 
         assert_eq!(e1.id, 1);
         assert_eq!(e2.id, 2);
+    }
+
+    #[test]
+    fn read_query_csv() {
+        let conf: AppConfig = Default::default();
+        let conf = Arc::new(conf);
+        let reader = Reader::new(conf);
+        let queries = reader.read_query_csv();
+
+        let q1 = queries.get(0).unwrap();
+        let q2 = queries.get(1).unwrap();
+
+        assert_eq!(q1.k, 3);
+        assert_eq!(q2.k, 5);
     }
 }

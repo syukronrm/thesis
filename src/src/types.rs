@@ -47,6 +47,6 @@ pub struct DataObject {
 
 /// Raw query data from dataset
 pub struct Query {
-    k: K,
-    dimentions: Vec<DimensionIndex>,
+    pub k: K,
+    pub dimensions: Vec<DimensionIndex>,
 }

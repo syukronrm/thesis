@@ -52,6 +52,36 @@ impl Reader {
 
         vec
     }
+
+    pub fn read_node_csv(self) -> Vec<Arc<DataNode>> {
+        let mut vec = Vec::new();
+        let mut rdr = ReaderBuilder::new()
+            .delimiter(b' ')
+            .from_path(self.config.paths.node_path.as_path())
+            .unwrap();
+
+        for result in rdr.records() {
+            let record = result.unwrap();
+            let id = record
+                .get(0)
+                .expect("Failed to get index 0")
+                .parse::<NodeId>()
+                .expect("Failed to parse Node ID");
+            let lng = record
+                .get(1)
+                .expect("Failed to get index 1")
+                .parse::<f32>()
+                .expect("Failed to parse lng");
+            let lat = record
+                .get(2)
+                .expect("Failed to get index 2")
+                .parse::<f32>()
+                .expect("Failed to parse lat");
+            vec.push(Arc::new(DataNode { id, lng, lat }));
+        }
+        vec.sort_by(|a, b| a.id.partial_cmp(&b.id).unwrap());
+        vec
+    }
 }
 
 #[cfg(test)]
@@ -69,5 +99,19 @@ mod tests {
         let o2: &Arc<DataObject> = objects.get(1).unwrap();
         assert_eq!(o1.id, 1);
         assert_eq!(o2.id, 2);
+    }
+
+    #[test]
+    fn read_node_file() {
+        let conf: AppConfig = Default::default();
+        let conf = Arc::new(conf);
+        let reader = Reader::new(conf);
+        let nodes = reader.read_node_csv();
+
+        let n1 = nodes.get(0).unwrap();
+        let n2 = nodes.get(1).unwrap();
+
+        assert_eq!(n1.id, 1);
+        assert_eq!(n2.id, 2);
     }
 }

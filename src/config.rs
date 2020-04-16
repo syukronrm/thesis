@@ -39,9 +39,9 @@ impl Paths {
     pub fn new(dataset_dir: PathBuf) -> Self {
         Paths {
             object_path: dataset_dir.join("object.txt"),
-            node_path: dataset_dir.join("object.txt"),
-            edge_path: dataset_dir.join("object.txt"),
-            query_path: dataset_dir.join("object.txt"),
+            node_path: dataset_dir.join("node.txt"),
+            edge_path: dataset_dir.join("edge.txt"),
+            query_path: dataset_dir.join("query.txt"),
         }
     }
 }

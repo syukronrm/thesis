@@ -15,7 +15,7 @@ impl Reader {
     }
 
     /// Read object from CSV file
-    pub fn read_object_csv(self) -> Vec<Arc<DataObject>> {
+    pub fn read_object_csv(&self) -> Vec<Arc<DataObject>> {
         let config = self.config.clone();
         let mut vec = Vec::new();
 
@@ -53,7 +53,7 @@ impl Reader {
         vec
     }
 
-    pub fn read_node_csv(self) -> Vec<Arc<DataNode>> {
+    pub fn read_node_csv(&self) -> Vec<Arc<DataNode>> {
         let mut vec = Vec::new();
         let mut rdr = ReaderBuilder::new()
             .delimiter(b' ')
@@ -82,6 +82,46 @@ impl Reader {
         vec.sort_by(|a, b| a.id.partial_cmp(&b.id).unwrap());
         vec
     }
+
+    pub fn read_edge_csv(&self, nodes: &Vec<Arc<DataNode>>) -> Vec<Arc<DataEdge>> {
+        let mut vec = Vec::new();
+
+        let mut rdr = ReaderBuilder::new()
+            .delimiter(b' ')
+            .has_headers(false)
+            .from_path(self.config.paths.edge_path.as_path())
+            .unwrap();
+
+        for result in rdr.records() {
+            let record = result.unwrap();
+            let id = record
+                .get(0)
+                .expect("Failed to get index 0")
+                .parse::<EdgeId>()
+                .expect("Failed to parse Edge ID");
+            let ni_id = record
+                .get(1)
+                .expect("Failed to get index 1")
+                .parse::<NodeId>()
+                .expect("Failed to parse node i id");
+            let nj_id = record
+                .get(2)
+                .expect("Failed to get index 2")
+                .parse::<NodeId>()
+                .expect("Failed to parse node j id");
+
+            let index_ni = nodes.binary_search_by(|n| n.id.cmp(&ni_id)).unwrap();
+            let index_nj = nodes.binary_search_by(|n| n.id.cmp(&nj_id)).unwrap();
+            let ni = nodes.get(index_ni).unwrap();
+            let nj = nodes.get(index_nj).unwrap();
+
+            vec.push(Arc::new(DataEdge::new(id, ni.clone(), nj.clone())));
+        }
+
+        vec.sort_by(|a, b| a.id.partial_cmp(&b.id).unwrap());
+        vec
+    }
+
 }
 
 #[cfg(test)]
@@ -102,7 +142,7 @@ mod tests {
     }
 
     #[test]
-    fn read_node_file() {
+    fn read_node_edge_csv() {
         let conf: AppConfig = Default::default();
         let conf = Arc::new(conf);
         let reader = Reader::new(conf);
@@ -113,5 +153,13 @@ mod tests {
 
         assert_eq!(n1.id, 1);
         assert_eq!(n2.id, 2);
+
+        let edges = reader.read_edge_csv(&nodes);
+        
+        let e1 = edges.get(0).unwrap();
+        let e2 = edges.get(1).unwrap();
+
+        assert_eq!(e1.id, 1);
+        assert_eq!(e2.id, 2);
     }
 }

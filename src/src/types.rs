@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::prelude::*;
 
@@ -14,14 +14,14 @@ pub struct DataNode {
 #[derive(Debug)]
 pub struct DataEdge {
     pub id: EdgeId,
-    pub ni: Rc<DataNode>,
-    pub nj: Rc<DataNode>,
+    pub ni: Arc<DataNode>,
+    pub nj: Arc<DataNode>,
     pub len: f32,
 }
 
 impl DataEdge {
     /// Create new raw edge
-    fn new(id: EdgeId, ni: Rc<DataNode>, nj: Rc<DataNode>) -> DataEdge {
+    pub fn new(id: EdgeId, ni: Arc<DataNode>, nj: Arc<DataNode>) -> DataEdge {
         let diff_lng = ni.lng - nj.lng;
         let diff_lat = ni.lat - nj.lat;
         let len = (diff_lng * diff_lng + diff_lat * diff_lat).sqrt();

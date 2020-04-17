@@ -1,5 +1,6 @@
 mod config;
 mod prelude;
+mod queries;
 mod src;
 mod types;
 

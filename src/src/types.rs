@@ -46,6 +46,7 @@ pub struct DataObject {
 }
 
 /// Raw query data from dataset
+#[derive(Clone, Debug)]
 pub struct Query {
     pub k: K,
     pub dimensions: Vec<DimensionIndex>,

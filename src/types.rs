@@ -3,3 +3,4 @@ pub type ObjectId = u32;
 pub type EdgeId = u32;
 pub type NodeId = u32;
 pub type K = u8;
+pub type QueryId = u32;

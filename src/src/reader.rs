@@ -129,7 +129,10 @@ impl Reader {
             .from_path(self.config.paths.query_path.as_path())
             .unwrap();
 
+        let mut id = 0;
         for result in rdr.records() {
+            id += 1;
+
             let record = result.unwrap();
             let k = record
                 .get(0)
@@ -151,7 +154,7 @@ impl Reader {
                 i += 1;
             }
             dimensions.sort();
-            let query = Query { k, dimensions };
+            let query = Query { id, k, dimensions };
             vec.push(Arc::new(query));
         }
 

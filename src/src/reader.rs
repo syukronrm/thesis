@@ -150,7 +150,7 @@ impl Reader {
                 dimensions.push(d);
                 i += 1;
             }
-
+            dimensions.sort();
             let query = Query { k, dimensions };
             vec.push(Arc::new(query));
         }

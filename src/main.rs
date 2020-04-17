@@ -1,4 +1,5 @@
 mod config;
+mod ikdsr;
 mod prelude;
 mod queries;
 mod src;

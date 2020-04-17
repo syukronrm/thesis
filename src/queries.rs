@@ -49,6 +49,15 @@ impl IntoIterator for Queries {
     }
 }
 
+impl IntoIterator for Group {
+    type Item = Arc<Query>;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.queries.into_iter()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -13,7 +13,7 @@ pub struct Graph {
 
 impl Graph {
     pub fn new(config: Arc<AppConfig>) -> Self {
-        let mut graph = StableGraph::with_capacity(0, 0);
+        let graph = StableGraph::with_capacity(0, 0);
         let mut itself = Graph {
             config,
             map_node_index: HashMap::new(),

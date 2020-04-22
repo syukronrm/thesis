@@ -146,3 +146,24 @@ impl PartialEq for TraverseState {
 }
 
 impl Eq for TraverseState {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::Arc;
+
+    #[test]
+    fn bfs_min_heap_new() {
+        let conf = Arc::new(AppConfig::default());
+        let graph = Graph::new(conf);
+        let n1_index = graph.node_index(1);
+        let mut bfs = BfsMinHeap::new(graph.clone(), n1_index);
+
+        let node_id_orders = [2, 3, 4, 6, 5];
+        for node_id in node_id_orders.iter() {
+            let state = bfs.next().unwrap();
+            let node_id_traverse = graph.node_id(state.node_index);
+            assert_eq!(node_id_traverse, *node_id);
+        }
+    }
+}

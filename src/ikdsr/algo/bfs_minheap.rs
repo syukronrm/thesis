@@ -51,12 +51,12 @@ impl Iterator for BfsMinHeap {
         if let Some(state) = self.min_heap.pop() {
             let TraverseState {
                 edge_index,
-                node_index,
+                node_index: node_index_src,
                 cost,
             } = state;
 
-            for node_index in self.graph.neighbors(node_index) {
-                let edge_index = self.graph.find_edge(node_index, node_index);
+            for node_index in self.graph.neighbors(node_index_src) {
+                let edge_index = self.graph.find_edge(node_index, node_index_src);
                 let cost_next = self.graph.edge_len(edge_index) + cost;
 
                 if cost_next < self.max_dist && cost_next < self.max_dist * 2.0 {
@@ -72,7 +72,7 @@ impl Iterator for BfsMinHeap {
             }
 
             Some(PairNodeEdge {
-                node_index,
+                node_index: node_index_src,
                 edge_index,
             })
         } else {

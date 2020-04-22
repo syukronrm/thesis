@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 pub struct Graph {
     pub config: Arc<AppConfig>,
+    map_node_index: HashMap<NodeId, NodeIndex>,
     inner: StableGraph<Node, Edge, Undirected>,
 }
 
@@ -14,6 +15,7 @@ impl Graph {
         let mut graph = StableGraph::with_capacity(0, 0);
         let mut itself = Graph {
             config,
+            map_node_index: HashMap::new(),
             inner: graph,
         };
         itself.initial_network();
@@ -47,15 +49,16 @@ impl Graph {
             self.inner
                 .add_edge(*node_i, *node_j, Edge::new(edge.id, edge.len));
         }
+
+        self.map_node_index = map_node_index;
     }
 
     pub fn node_indices(&self) -> NodeIndices<Node> {
         self.inner.node_indices()
     }
 
-    #[cfg(test)]
-    pub fn edge_indices(&self) -> EdgeIndices<Edge> {
-       self.inner.edge_indices()
+    pub fn node_index(&self, node_id: NodeId) -> NodeIndex {
+        *self.map_node_index.get(&node_id).unwrap()
     }
 
     pub fn find_edge(&self, a: NodeIndex, b: NodeIndex) -> EdgeIndex {
@@ -68,6 +71,11 @@ impl Graph {
 
     pub fn edge_len(&self, edge: EdgeIndex) -> f32 {
         self.inner.edge_weight(edge).unwrap().len
+    }
+
+    #[cfg(test)]
+    pub fn edge_indices(&self) -> EdgeIndices<Edge> {
+       self.inner.edge_indices()
     }
 }
 

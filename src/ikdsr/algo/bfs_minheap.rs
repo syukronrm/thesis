@@ -23,6 +23,7 @@ impl BfsMinHeap {
         let mut cost_map: HashMap<NodeIndex, f32> =
             graph.node_indices().map(|x| (x, std::f32::MAX)).collect();
 
+        *cost_map.get_mut(&start).unwrap() = 0.0;
         let mut min_heap = BinaryHeap::new();
         for node_index in graph.neighbors(start) {
             let edge_index = graph.find_edge(start, node_index);

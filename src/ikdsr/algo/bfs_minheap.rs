@@ -62,7 +62,8 @@ impl Iterator for BfsMinHeap {
                 let edge_index = self.graph.find_edge(node_index, node_index_src);
                 let cost_next = self.graph.edge_len(edge_index) + cost;
 
-                if cost_next < self.max_dist && cost_next < self.max_dist * 2.0 {
+                let prev_cost = *self.cost_map.get(&node_index).unwrap();
+                if cost_next < prev_cost && cost_next < self.max_dist * 2.0 {
                     self.min_heap.push(TraverseState {
                         edge_index,
                         node_index,

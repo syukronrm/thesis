@@ -65,7 +65,7 @@ impl Graph {
     pub fn edge_id(&self, edge_index: EdgeIndex) -> EdgeId {
         self.inner.edge_weight(edge_index).unwrap().id
     }
- 
+
     pub fn node_index(&self, node_id: NodeId) -> NodeIndex {
         *self.map_node_index.get(&node_id).unwrap()
     }
@@ -84,7 +84,7 @@ impl Graph {
 
     #[cfg(test)]
     pub fn edge_indices(&self) -> EdgeIndices<Edge> {
-       self.inner.edge_indices()
+        self.inner.edge_indices()
     }
 }
 

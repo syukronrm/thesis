@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use crate::prelude::*;
 
 /// Global configuration
-#[derive(Clone,Debug)]
+#[derive(Clone, Debug)]
 pub struct AppConfig {
     pub max_dim: DimensionIndex,
     pub max_dist: f32,
@@ -27,7 +27,7 @@ impl Default for AppConfig {
 }
 
 /// Paths for all files for dataset
-#[derive(Clone,Debug)]
+#[derive(Clone, Debug)]
 pub struct Paths {
     pub object_path: PathBuf,
     pub node_path: PathBuf,

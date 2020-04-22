@@ -3,6 +3,7 @@ use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap};
 
 /// Traverse a graph with BFS feat `min_heap`.
+#[derive(Clone)]
 struct BfsMinHeap {
     graph: Graph,
     max_dist: f32,

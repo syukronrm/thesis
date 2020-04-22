@@ -4,6 +4,7 @@ use petgraph::Undirected;
 use std::collections::HashMap;
 use std::sync::Arc;
 
+#[derive(Clone)]
 pub struct Graph {
     pub config: Arc<AppConfig>,
     map_node_index: HashMap<NodeId, NodeIndex>,

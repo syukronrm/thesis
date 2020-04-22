@@ -1,8 +1,9 @@
 use crate::prelude::*;
 use std::collections::{BTreeMap, HashMap};
 
+#[derive(Clone)]
 pub struct Edge {
-    id: EdgeId,
+    pub id: EdgeId,
     pub len: f32,
     result: BTreeResult,
 }
@@ -17,6 +18,7 @@ impl Edge {
     }
 }
 
+#[derive(Clone)]
 struct BTreeResult {
     inner: HashMap<QueryId, BTreeMap<f32, ObjectId>>,
 }

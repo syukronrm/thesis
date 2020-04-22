@@ -1,6 +1,7 @@
 use crate::prelude::*;
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap};
+use std::fmt;
 
 /// Traverse a graph with BFS feat `min_heap`.
 #[derive(Clone)]
@@ -46,14 +47,14 @@ impl BfsMinHeap {
 }
 
 impl Iterator for BfsMinHeap {
-    type Item = PairNodeEdge;
+    type Item = TraverseState;
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(state) = self.min_heap.pop() {
             let TraverseState {
-                edge_index,
                 node_index: node_index_src,
                 cost,
+                ..
             } = state;
 
             for node_index in self.graph.neighbors(node_index_src) {
@@ -72,19 +73,35 @@ impl Iterator for BfsMinHeap {
                 }
             }
 
-            Some(PairNodeEdge {
-                node_index: node_index_src,
-                edge_index,
-            })
+            Some(state)
         } else {
             None
         }
     }
 }
 
-struct PairNodeEdge {
-    node_index: NodeIndex,
-    edge_index: EdgeIndex,
+#[derive(Debug)]
+struct TraverseStateDebug {
+    edge_id: EdgeId,
+    node_id: NodeId,
+    cost: f32,
+}
+
+impl fmt::Debug for BfsMinHeap {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut f_main = f.debug_list();
+        for state in self.clone() {
+            let node_id = self.graph.node_id(state.node_index);
+            let edge_id = self.graph.edge_id(state.edge_index);
+            let state = TraverseStateDebug {
+                node_id,
+                edge_id,
+                cost: state.cost,
+            };
+            f_main.entry(&state);
+        }
+        f_main.finish()
+    }
 }
 
 /// Save the cost of node and its previous edge.

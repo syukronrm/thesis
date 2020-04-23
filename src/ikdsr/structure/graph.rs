@@ -48,7 +48,8 @@ impl Graph {
         for edge in edges {
             let node_i = map_node_index.get(&edge.ni.id).unwrap();
             let node_j = map_node_index.get(&edge.nj.id).unwrap();
-            let edge_index = self.inner
+            let edge_index = self
+                .inner
                 .add_edge(*node_i, *node_j, Edge::new(edge.id, edge.len));
             map_edge_index.insert(edge.id, edge_index);
         }

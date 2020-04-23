@@ -1,10 +1,12 @@
 use crate::prelude::*;
 use std::collections::{BTreeMap, HashMap};
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct Edge {
     pub id: EdgeId,
     pub len: f32,
+    pub objects: Vec<Arc<DataObject>>,
     result: BTreeResult,
 }
 
@@ -13,8 +15,13 @@ impl Edge {
         Edge {
             id,
             len,
+            objects: Vec::new(),
             result: BTreeResult::new(),
         }
+    }
+
+    pub fn add_object(&mut self, object: Arc<DataObject>) {
+        self.objects.push(object);
     }
 }
 

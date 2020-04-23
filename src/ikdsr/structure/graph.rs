@@ -44,11 +44,20 @@ impl Graph {
 
         let edges = reader.read_edge_csv(&arc_nodes);
 
+        let mut map_edge_index = HashMap::new();
         for edge in edges {
             let node_i = map_node_index.get(&edge.ni.id).unwrap();
             let node_j = map_node_index.get(&edge.nj.id).unwrap();
-            self.inner
+            let edge_index = self.inner
                 .add_edge(*node_i, *node_j, Edge::new(edge.id, edge.len));
+            map_edge_index.insert(edge.id, edge_index);
+        }
+
+        let objects = reader.read_object_csv();
+        for object in objects {
+            let edge_index = map_edge_index.get(&object.edge_id).unwrap();
+            let edge = self.inner.edge_weight_mut(*edge_index).unwrap();
+            edge.add_object(object);
         }
 
         self.map_node_index = map_node_index;

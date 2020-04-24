@@ -67,6 +67,10 @@ impl Graph {
         self.map_node_index = map_node_index;
     }
 
+    // TODO: insert object as node, returning NodeIndex
+    #[allow(dead_code)]
+    fn insert_object_as_node(&mut self, object: Arc<DataObject>) {}
+
     pub fn node_indices(&self) -> NodeIndices<Node> {
         self.inner.node_indices()
     }

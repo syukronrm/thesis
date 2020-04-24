@@ -2,6 +2,7 @@ use crate::prelude::*;
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap};
 use std::fmt;
+use std::sync::Arc;
 
 /// Traverse a graph with BFS feat `min_heap`.
 #[derive(Clone)]
@@ -45,6 +46,12 @@ impl<'a> BfsMinHeap<'a> {
             cost_map,
         }
     }
+
+    // TODO: create traversal using object
+    // create object as node
+    // returning BfsMinHeap
+    #[allow(dead_code)]
+    fn from_object(graph: &'a Graph, object_id: Arc<DataObject>) {}
 }
 
 impl<'a> Iterator for BfsMinHeap<'a> {

@@ -108,10 +108,10 @@ impl<'a> fmt::Debug for BfsMinHeap<'a> {
 
 /// Save the cost of node and its previous edge.
 #[derive(Copy, Clone)]
-struct TraverseState {
-    cost: f32,
-    node_index: NodeIndex,
-    edge_index: EdgeIndex,
+pub struct TraverseState {
+    pub cost: f32,
+    pub node_index: NodeIndex,
+    pub edge_index: EdgeIndex,
 }
 
 impl Ord for TraverseState {

@@ -92,6 +92,10 @@ impl Graph {
         self.inner.edge_weight(edge).unwrap().len
     }
 
+    pub fn objects(&self, edge: EdgeIndex) -> Vec<Arc<DataObject>> {
+        self.inner.edge_weight(edge).unwrap().objects.clone()
+    }
+
     #[cfg(test)]
     pub fn edge_indices(&self) -> EdgeIndices<Edge> {
         self.inner.edge_indices()

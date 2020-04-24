@@ -8,6 +8,7 @@ use std::sync::Arc;
 pub struct Graph {
     pub config: Arc<AppConfig>,
     map_node_index: HashMap<NodeId, NodeIndex>,
+    objects: HashMap<ObjectId, Arc<DataObject>>,
     inner: StableGraph<Node, Edge, Undirected>,
 }
 
@@ -17,6 +18,7 @@ impl Graph {
         let mut itself = Graph {
             config,
             map_node_index: HashMap::new(),
+            objects: HashMap::new(),
             inner: graph,
         };
         itself.initial_network();
@@ -58,7 +60,8 @@ impl Graph {
         for object in objects {
             let edge_index = map_edge_index.get(&object.edge_id).unwrap();
             let edge = self.inner.edge_weight_mut(*edge_index).unwrap();
-            edge.add_object(object);
+            edge.add_object(object.clone());
+            self.objects.insert(object.id, object);
         }
 
         self.map_node_index = map_node_index;

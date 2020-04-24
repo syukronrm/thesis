@@ -9,14 +9,13 @@ struct Voronoi {}
 impl Voronoi {}
 
 struct DomTraverse {
-    max_dist: f32,
     originator: Arc<DataObject>,
     pub dominated_by: HashMap<ObjectId, K>,
     pub dominate: HashMap<ObjectId, K>,
 }
 
 impl DomTraverse {
-    pub fn dominate_dominated_by(graph: &Graph, max_dist: f32, originator: Arc<DataObject>) -> Self {
+    pub fn dominate_dominated_by(graph: &Graph, originator: Arc<DataObject>) -> Self {
         let node_index = graph.node_index(originator.id);
         let bfs = BfsMinHeap::new(graph, node_index);
 
@@ -51,7 +50,6 @@ impl DomTraverse {
         }
 
         DomTraverse {
-            max_dist,
             originator,
             dominated_by,
             dominate,

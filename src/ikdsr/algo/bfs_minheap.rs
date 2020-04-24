@@ -5,19 +5,19 @@ use std::fmt;
 
 /// Traverse a graph with BFS feat `min_heap`.
 #[derive(Clone)]
-struct BfsMinHeap {
-    graph: Graph,
+pub struct BfsMinHeap<'a> {
+    graph: &'a Graph,
     max_dist: f32,
     min_heap: BinaryHeap<TraverseState>,
     cost_map: HashMap<NodeIndex, f32>,
 }
 
-impl BfsMinHeap {
+impl<'a> BfsMinHeap<'a> {
     /// Initialize new traversal. What it does?
     ///
     /// - Set all node cost as f32::MAX.
     /// - Push neighbors of centroid to `min_heap`.
-    pub fn new(graph: Graph, start: NodeIndex) -> Self {
+    pub fn new(graph: &'a Graph, start: NodeIndex) -> Self {
         let max_dist = graph.config.max_dist;
 
         let mut cost_map: HashMap<NodeIndex, f32> =
@@ -47,7 +47,7 @@ impl BfsMinHeap {
     }
 }
 
-impl Iterator for BfsMinHeap {
+impl<'a> Iterator for BfsMinHeap<'a> {
     type Item = TraverseState;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -89,7 +89,7 @@ struct TraverseStateDebug {
     cost: f32,
 }
 
-impl fmt::Debug for BfsMinHeap {
+impl<'a> fmt::Debug for BfsMinHeap<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut f_main = f.debug_list();
         for state in self.clone() {
@@ -157,7 +157,7 @@ mod tests {
         let conf = Arc::new(AppConfig::default());
         let graph = Graph::new(conf);
         let n1_index = graph.node_index(1);
-        let mut bfs = BfsMinHeap::new(graph.clone(), n1_index);
+        let mut bfs = BfsMinHeap::new(&graph, n1_index);
 
         let node_id_orders = [2, 3, 4, 6, 5];
         for node_id in node_id_orders.iter() {

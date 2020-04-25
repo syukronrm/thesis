@@ -8,7 +8,6 @@ use std::sync::Arc;
 pub struct Graph {
     pub config: Arc<AppConfig>,
     objects: HashMap<ObjectId, Arc<DataObject>>,
-    map_edges: HashMap<EdgeId, Arc<DataEdge>>,
     inner: GraphMap<NodeId, Edge, Undirected>,
 }
 
@@ -18,7 +17,6 @@ impl Graph {
         let mut itself = Graph {
             config,
             objects: HashMap::new(),
-            map_edges: HashMap::new(),
             inner: graph,
         };
         itself.initial_network();

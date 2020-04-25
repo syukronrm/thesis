@@ -15,15 +15,23 @@ struct DomTraverse {
 }
 
 impl DomTraverse {
-    pub fn dominate_dominated_by(graph: &Graph, originator: Arc<DataObject>) -> Self {
-        let node_index = graph.node_index(originator.id);
-        let bfs = BfsMinHeap::new(graph, node_index);
+    pub fn dominate_dominated_by(
+        graph: &Graph,
+        centroid_id: NodeId,
+        originator: Arc<DataObject>,
+    ) -> Self {
+        let bfs = BfsMinHeap::new(graph, centroid_id);
 
         let mut dominated_by = HashMap::new();
         let mut dominate = HashMap::new();
 
-        for TraverseState { edge_index, .. } in bfs {
-            let objects = graph.objects(edge_index);
+        for TraverseState {
+            node_id,
+            prev_node_id,
+            ..
+        } in bfs
+        {
+            let objects = graph.objects(node_id, prev_node_id);
             for object in objects {
                 let mut src_score = 0;
                 let mut dst_score = 0;
@@ -66,7 +74,7 @@ mod tests {
     fn compute() {
         let conf = Arc::new(AppConfig::default());
         let graph = Graph::new(conf);
-        let edge = graph.edge_indices();
+        // let edge = graph.edge_indices();
         // let Some(edge_index) = edge.next();
         // DomTraverse::dominate_dominated_by(&graph, originator);
     }

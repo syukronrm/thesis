@@ -10,7 +10,7 @@ pub struct BfsMinHeap<'a> {
     graph: &'a Graph,
     max_dist: f32,
     min_heap: BinaryHeap<TraverseState>,
-    cost_map: HashMap<NodeIndex, f32>,
+    cost_map: HashMap<NodeId, f32>,
 }
 
 impl<'a> BfsMinHeap<'a> {
@@ -18,25 +18,24 @@ impl<'a> BfsMinHeap<'a> {
     ///
     /// - Set all node cost as f32::MAX.
     /// - Push neighbors of centroid to `min_heap`.
-    pub fn new(graph: &'a Graph, start: NodeIndex) -> Self {
+    pub fn new(graph: &'a Graph, start: NodeId) -> Self {
         let max_dist = graph.config.max_dist;
 
-        let mut cost_map: HashMap<NodeIndex, f32> =
-            graph.node_indices().map(|x| (x, std::f32::MAX)).collect();
+        let mut cost_map: HashMap<NodeId, f32> =
+            graph.nodes().map(|x| (x, std::f32::MAX)).collect();
 
         *cost_map.get_mut(&start).unwrap() = 0.0;
         let mut min_heap = BinaryHeap::new();
-        for node_index in graph.neighbors(start) {
-            let edge_index = graph.find_edge(start, node_index);
-            let cost = graph.edge_len(edge_index);
+        for node_id in graph.neighbors(start) {
+            let cost = graph.edge_len(start, node_id);
             min_heap.push(TraverseState {
-                edge_index,
-                node_index,
+                prev_node_id: start,
+                node_id: node_id,
                 cost,
             });
 
             // replace cost of `node`
-            *cost_map.get_mut(&node_index).unwrap() = cost;
+            *cost_map.get_mut(&node_id).unwrap() = cost;
         }
 
         BfsMinHeap {
@@ -50,7 +49,7 @@ impl<'a> BfsMinHeap<'a> {
     // TODO: create traversal using object
     // create object as node
     // returning BfsMinHeap
-    #[allow(dead_code)]
+    #[allow(dead_code, unused_variables)]
     fn from_object(graph: &'a Graph, object_id: Arc<DataObject>) {}
 }
 
@@ -60,25 +59,23 @@ impl<'a> Iterator for BfsMinHeap<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(state) = self.min_heap.pop() {
             let TraverseState {
-                node_index: node_index_src,
+                node_id: node_id_src,
                 cost,
                 ..
             } = state;
 
-            for node_index in self.graph.neighbors(node_index_src) {
-                let edge_index = self.graph.find_edge(node_index, node_index_src);
-                let cost_next = self.graph.edge_len(edge_index) + cost;
-
-                let prev_cost = *self.cost_map.get(&node_index).unwrap();
+            for node_id in self.graph.neighbors(node_id_src) {
+                let cost_next = cost + self.graph.edge_len(node_id, node_id_src);
+                let prev_cost = *self.cost_map.get(&node_id).unwrap();
                 if cost_next < prev_cost && cost_next < self.max_dist * 2.0 {
                     self.min_heap.push(TraverseState {
-                        edge_index,
-                        node_index,
+                        prev_node_id: node_id_src,
+                        node_id,
                         cost: cost_next,
                     });
 
                     // replace the cost if `node_index`
-                    *self.cost_map.get_mut(&node_index).unwrap() = cost_next;
+                    *self.cost_map.get_mut(&node_id).unwrap() = cost_next;
                 }
             }
 
@@ -89,24 +86,10 @@ impl<'a> Iterator for BfsMinHeap<'a> {
     }
 }
 
-#[derive(Debug)]
-struct TraverseStateDebug {
-    edge_id: EdgeId,
-    node_id: NodeId,
-    cost: f32,
-}
-
 impl<'a> fmt::Debug for BfsMinHeap<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut f_main = f.debug_list();
         for state in self.clone() {
-            let node_id = self.graph.node_id(state.node_index);
-            let edge_id = self.graph.edge_id(state.edge_index);
-            let state = TraverseStateDebug {
-                node_id,
-                edge_id,
-                cost: state.cost,
-            };
             f_main.entry(&state);
         }
         f_main.finish()
@@ -114,11 +97,11 @@ impl<'a> fmt::Debug for BfsMinHeap<'a> {
 }
 
 /// Save the cost of node and its previous edge.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct TraverseState {
     pub cost: f32,
-    pub node_index: NodeIndex,
-    pub edge_index: EdgeIndex,
+    pub node_id: NodeId,
+    pub prev_node_id: NodeId,
 }
 
 impl Ord for TraverseState {
@@ -163,14 +146,12 @@ mod tests {
     fn bfs_min_heap_new() {
         let conf = Arc::new(AppConfig::default());
         let graph = Graph::new(conf);
-        let n1_index = graph.node_index(1);
-        let mut bfs = BfsMinHeap::new(&graph, n1_index);
+        let mut bfs = BfsMinHeap::new(&graph, 1);
 
         let node_id_orders = [2, 3, 4, 6, 5];
         for node_id in node_id_orders.iter() {
             let state = bfs.next().unwrap();
-            let node_id_traverse = graph.node_id(state.node_index);
-            assert_eq!(node_id_traverse, *node_id);
+            assert_eq!(state.node_id, *node_id);
         }
     }
 }

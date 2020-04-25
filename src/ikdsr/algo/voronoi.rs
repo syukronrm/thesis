@@ -56,3 +56,18 @@ impl DomTraverse {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::Arc;
+
+    #[test]
+    fn compute() {
+        let conf = Arc::new(AppConfig::default());
+        let graph = Graph::new(conf);
+        let edge = graph.edge_indices();
+        // let Some(edge_index) = edge.next();
+        // DomTraverse::dominate_dominated_by(&graph, originator);
+    }
+}

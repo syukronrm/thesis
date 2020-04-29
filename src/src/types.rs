@@ -14,8 +14,8 @@ pub struct DataNode {
 #[derive(Debug)]
 pub struct DataEdge {
     pub id: EdgeId,
-    pub ni: Arc<DataNode>,
-    pub nj: Arc<DataNode>,
+    pub ni: NodeId,
+    pub nj: NodeId,
     pub len: f32,
 }
 
@@ -25,18 +25,24 @@ impl DataEdge {
         let diff_lng = ni.lng - nj.lng;
         let diff_lat = ni.lat - nj.lat;
         let len = (diff_lng * diff_lng + diff_lat * diff_lat).sqrt();
-        DataEdge { id, ni, nj, len }
+        DataEdge {
+            id,
+            ni: ni.id,
+            nj: nj.id,
+            len,
+        }
     }
 }
 
 /// Action for new object
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Action {
     Insertion,
     Deletion,
 }
 
 /// Raw object data from dataset
+#[derive(Clone)]
 pub struct DataObject {
     pub id: ObjectId,
     pub attr: Vec<f32>,

@@ -170,7 +170,43 @@ mod tests {
         assert_eq!(edges, 5);
     }
 
-    // TODO: create test
     #[test]
-    fn convert_objects_as_node() {}
+    fn convert_objects_as_node() {
+        let conf = Arc::new(AppConfig::default());
+        let mut graph = Graph::new(conf);
+
+        fn new_object(id: ObjectId, edge_id: EdgeId, dist: f32) -> Arc<DataObject> {
+            let o = DataObject {
+                id,
+                edge_id,
+                dist,
+                attr: Vec::new(),
+                action: Action::Insertion,
+            };
+            Arc::new(o)
+        }
+
+        let objects = vec!(
+            new_object(100, 3, 0.4),
+            new_object(101, 3, 0.3),
+            new_object(102, 3, 0.8),
+        );
+
+        graph.convert_objects_as_node(3, objects);
+        let edges = graph.inner.all_edges();
+        let (mut e1, mut e2, mut e3) = (false, false, false);
+        for (ni, nj, edge) in edges {
+            if edge.id == Graph::object_as_edge_id(100) {
+                e1 = true;
+            } else if edge.id == Graph::object_as_edge_id(101) {
+                e2 = true;
+            } else if edge.id == Graph::object_as_last_edge_id(102) {
+                e3 = true;
+            }
+
+            println!("EdgeID {} \t NodeI {} \t NodeJ {} \t Length {}", edge.id, ni, nj, edge.len);
+        }
+
+        assert!(e1 == true && e2 == true && e3 == true)
+    }
 }

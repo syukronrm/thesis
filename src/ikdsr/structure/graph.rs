@@ -58,7 +58,7 @@ impl Graph {
     }
 
     #[allow(dead_code, unused_variables)]
-    fn convert_objects_as_node(&mut self, edge_id: EdgeId, mut objects: Vec<Arc<DataObject>>) {
+    fn convert_objects_as_node(&mut self, edge_id: EdgeId, mut objects: Vec<Arc<DataObject>>) -> Vec<NodeId> {
         let edge = self.map_edges.get(&edge_id).unwrap().clone();
         objects.sort_by(|a, b| a.dist.partial_cmp(&b.dist).unwrap());
 
@@ -66,10 +66,12 @@ impl Graph {
 
         let mut prev_node_id = edge.ni;
         let last_node_id = edge.nj;
+        let mut new_node_ids = Vec::new();
 
         for o in &objects {
             let new_node_id = Self::as_node_id(o);
             self.inner.add_node(new_node_id);
+            new_node_ids.push(new_node_id);
 
             // keep new node id mapped
             let node = self.create_node_from_object(new_node_id, o.dist, &edge);
@@ -87,6 +89,8 @@ impl Graph {
 
             prev_node_id = new_node_id;
         }
+
+        new_node_ids
     }
 
     fn create_node_from_object(
@@ -192,7 +196,10 @@ mod tests {
             new_object(102, 3, 0.8),
         );
 
-        graph.convert_objects_as_node(3, objects);
+        let new_node_ids = graph.convert_objects_as_node(3, objects);
+
+        assert_eq!(new_node_ids.len(), 3);
+
         let edges = graph.inner.all_edges();
         let (mut e1, mut e2, mut e3) = (false, false, false);
         for (ni, nj, edge) in edges {

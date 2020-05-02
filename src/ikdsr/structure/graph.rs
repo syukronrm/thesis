@@ -57,6 +57,11 @@ impl Graph {
         }
     }
 
+    pub fn convert_object_as_node(&mut self, object: Arc<DataObject>) -> NodeId {
+        let new_node_ids = self.convert_objects_as_node(object.edge_id, vec!(object));
+        *new_node_ids.first().unwrap()
+    }
+
     #[allow(dead_code, unused_variables)]
     fn convert_objects_as_node(&mut self, edge_id: EdgeId, mut objects: Vec<Arc<DataObject>>) -> Vec<NodeId> {
         let edge = self.map_edges.get(&edge_id).unwrap().clone();

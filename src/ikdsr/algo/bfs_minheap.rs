@@ -46,11 +46,10 @@ impl<'a> BfsMinHeap<'a> {
         }
     }
 
-    // TODO: create traversal using object
-    // create object as node
-    // returning BfsMinHeap
-    #[allow(dead_code, unused_variables)]
-    fn from_object(graph: &'a Graph, object_id: Arc<DataObject>) {}
+    fn from_object(graph: &'a mut Graph, object: Arc<DataObject>) -> Self {
+        let new_node_id = graph.convert_object_as_node(object);
+        BfsMinHeap::new(graph, new_node_id)
+    }
 }
 
 impl<'a> Iterator for BfsMinHeap<'a> {

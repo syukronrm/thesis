@@ -49,7 +49,7 @@ impl DomTraverse {
 
                 if src_score > dst_score {
                     let k = dst_score + 1;
-                    dominate.insert(originator.id, k);
+                    dominate.insert(object.id, k);
                 } else if src_score < dst_score {
                     let k = src_score + 1;
                     dominated_by.insert(object.id, k);
@@ -80,9 +80,12 @@ mod tests {
     #[test]
     fn compute() {
         let conf = Arc::new(AppConfig::default());
-        let graph = Graph::new(conf);
-        // let edge = graph.edge_indices();
-        // let Some(edge_index) = edge.next();
-        // DomTraverse::dominate_dominated_by(&graph, originator);
+        let mut graph = Graph::new(conf);
+        let object_id = 3;
+        let result = DomTraverse::dominate_dominated_by_from_id(&mut graph, object_id);
+        assert_eq!(result.dominate.get(&2).unwrap(), &3);
+        assert_eq!(result.dominated_by.get(&1).unwrap(), &2);
+
+        println!("{:#?}", result);
     }
 }

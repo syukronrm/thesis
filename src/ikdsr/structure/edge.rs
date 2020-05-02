@@ -42,7 +42,7 @@ impl Edge {
             .filter_map(|o| {
                 if o.dist >= dist_a && o.dist < dist_b {
                     let mut o_new = o.clone();
-                    Arc::make_mut(&mut o_new).dist = (o.dist - dist_a) / dist_b;
+                    Arc::make_mut(&mut o_new).dist = (o.dist - dist_a) / (dist_b - dist_a);
                     Some(o_new)
                 } else {
                     None

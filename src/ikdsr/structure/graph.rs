@@ -58,13 +58,18 @@ impl Graph {
     }
 
     pub fn convert_object_as_node(&mut self, object: Arc<DataObject>) -> NodeId {
-        let new_node_ids = self.convert_objects_as_node(object.edge_id, vec!(object));
+        let new_node_ids = self.convert_objects_as_node(object.edge_id, vec![object]);
         *new_node_ids.first().unwrap()
     }
 
     #[allow(dead_code, unused_variables)]
-    fn convert_objects_as_node(&mut self, edge_id: EdgeId, mut objects: Vec<Arc<DataObject>>) -> Vec<NodeId> {
-        let edge = self.map_edges.get(&edge_id).unwrap().clone();
+    fn convert_objects_as_node(
+        &mut self,
+        edge_id: EdgeId,
+        mut objects: Vec<Arc<DataObject>>,
+    ) -> Vec<NodeId> {
+        let edge = self.map_edges.get(&edge_id).unwrap();
+        let edge = self.inner.edge_weight(edge.ni, edge.nj).unwrap().clone();
         objects.sort_by(|a, b| a.dist.partial_cmp(&b.dist).unwrap());
 
         let last_object = objects.last();
@@ -72,6 +77,7 @@ impl Graph {
         let mut prev_node_id = edge.ni;
         let last_node_id = edge.nj;
         let mut new_node_ids = Vec::new();
+        let mut prev_dist = 0.0;
 
         for o in &objects {
             let new_node_id = Self::as_node_id(o);
@@ -84,15 +90,18 @@ impl Graph {
 
             // insert new edge before object
             let prev_edge_id = Self::object_as_edge_id(o.id);
-            self.add_edge(prev_edge_id, prev_node_id, new_node_id);
+            let objects = edge.objects_in_between(prev_dist, o.dist);
+            self.add_edge(prev_edge_id, prev_node_id, new_node_id, objects);
 
             // insert new edge after object
             if last_object.unwrap().id == o.id {
                 let next_edge_id = Self::object_as_last_edge_id(o.id);
-                self.add_edge(next_edge_id, new_node_id, last_node_id);
+                let objects = edge.objects_in_between(o.dist, 1.0);
+                self.add_edge(next_edge_id, new_node_id, last_node_id, objects);
             }
 
             prev_node_id = new_node_id;
+            prev_dist = o.dist;
         }
 
         new_node_ids
@@ -102,7 +111,7 @@ impl Graph {
         &self,
         node_id: NodeId,
         object_dist: f32,
-        edge: &DataEdge,
+        edge: &Edge,
     ) -> Arc<DataNode> {
         let ni = self.map_nodes.get(&edge.ni).unwrap();
         let nj = self.map_nodes.get(&edge.nj).unwrap();
@@ -115,9 +124,10 @@ impl Graph {
         })
     }
 
-    fn add_edge(&mut self, edge_id: EdgeId, prev_node_id: NodeId, node_id: NodeId) {
+    fn add_edge(&mut self, edge_id: EdgeId, prev_node_id: NodeId, node_id: NodeId, objects: Vec<Arc<DataObject>>) {
         let edge_len = self.node_distance(prev_node_id, node_id);
-        let new_edge = Edge::new(edge_id, edge_len, prev_node_id, node_id);
+        let mut new_edge = Edge::new(edge_id, edge_len, prev_node_id, node_id);
+        new_edge.add_objects(objects);
         self.inner.add_edge(prev_node_id, node_id, new_edge);
     }
 
@@ -131,6 +141,20 @@ impl Graph {
 
     pub fn neighbors(&self, n: NodeId) -> Neighbors<NodeId> {
         self.inner.neighbors(n)
+    }
+
+    /// Remove node and its adjacent edges. Remove their indices too.
+    pub fn remove_node(&mut self, n: NodeId) {
+        let edges = self.inner.edges(n);
+        for (_, _, e) in edges {
+            self.map_edges.remove(&e.id);
+        }
+        self.map_nodes.remove(&n);
+        self.inner.remove_node(n);
+    }
+
+    pub fn object(&self, object_id: ObjectId) -> Arc<DataObject> {
+        self.objects.get(&object_id).unwrap().clone()
     }
 
     pub fn nodes(&self) -> Nodes<NodeId> {
@@ -195,11 +219,11 @@ mod tests {
             Arc::new(o)
         }
 
-        let objects = vec!(
-            new_object(100, 3, 0.4),
-            new_object(101, 3, 0.3),
+        let objects = vec![
+            new_object(100, 3, 0.3),
+            new_object(101, 3, 0.4),
             new_object(102, 3, 0.8),
-        );
+        ];
 
         let new_node_ids = graph.convert_objects_as_node(3, objects);
 
@@ -216,7 +240,12 @@ mod tests {
                 e3 = true;
             }
 
-            println!("EdgeID {} \t NodeI {} \t NodeJ {} \t Length {}", edge.id, ni, nj, edge.len);
+            println!(
+                "EdgeID {} \t NodeI {} \t NodeJ {} \t Length {}",
+                edge.id, ni, nj, edge.len
+            );
+
+            println!("Objects: {:#?}", edge.objects);
         }
 
         assert!(e1 == true && e2 == true && e3 == true)

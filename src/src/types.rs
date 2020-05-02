@@ -42,7 +42,7 @@ pub enum Action {
 }
 
 /// Raw object data from dataset
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct DataObject {
     pub id: ObjectId,
     pub attr: Vec<f32>,

@@ -8,6 +8,7 @@ struct Voronoi {}
 
 impl Voronoi {}
 
+#[derive(Debug)]
 struct DomTraverse {
     originator: Arc<DataObject>,
     pub dominated_by: HashMap<ObjectId, K>,
@@ -15,11 +16,10 @@ struct DomTraverse {
 }
 
 impl DomTraverse {
-    pub fn dominate_dominated_by(
-        graph: &Graph,
-        centroid_id: NodeId,
-        originator: Arc<DataObject>,
-    ) -> Self {
+    /// Get objects dominate and dominated by originator.
+    #[allow(dead_code)]
+    pub fn dominate_dominated_by(graph: &mut Graph, originator: Arc<DataObject>) -> Self {
+        let centroid_id = graph.convert_object_as_node(originator.clone());
         let bfs = BfsMinHeap::new(graph, centroid_id);
 
         let mut dominated_by = HashMap::new();
@@ -57,11 +57,18 @@ impl DomTraverse {
             }
         }
 
+        graph.remove_node(centroid_id);
+
         DomTraverse {
             originator,
             dominated_by,
             dominate,
         }
+    }
+
+    pub fn dominate_dominated_by_from_id(graph: &mut Graph, object_id: ObjectId) -> Self {
+        let object = graph.object(object_id);
+        Self::dominate_dominated_by(graph, object)
     }
 }
 

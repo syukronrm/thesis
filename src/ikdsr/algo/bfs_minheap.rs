@@ -11,6 +11,7 @@ pub struct BfsMinHeap<'a> {
     max_dist: f32,
     min_heap: BinaryHeap<TraverseState>,
     cost_map: HashMap<NodeId, f32>,
+    visited: HashMap<NodeId, bool>,
 }
 
 impl<'a> BfsMinHeap<'a> {
@@ -43,6 +44,7 @@ impl<'a> BfsMinHeap<'a> {
             max_dist,
             min_heap,
             cost_map,
+            visited: HashMap::new(),
         }
     }
 
@@ -56,12 +58,18 @@ impl<'a> Iterator for BfsMinHeap<'a> {
     type Item = TraverseState;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(state) = self.min_heap.pop() {
+        let mut returned_state = None;
+        while let Some(state) = self.min_heap.pop() {
             let TraverseState {
                 node_id: node_id_src,
                 cost,
                 ..
             } = state;
+
+            if let Some(_) = self.visited.get(&node_id_src) {
+                continue;
+            }
+            self.visited.insert(node_id_src, true);
 
             for node_id in self.graph.neighbors(node_id_src) {
                 let cost_next = cost + self.graph.edge_len(node_id, node_id_src);
@@ -78,10 +86,10 @@ impl<'a> Iterator for BfsMinHeap<'a> {
                 }
             }
 
-            Some(state)
-        } else {
-            None
+            returned_state = Some(state);
+            break;
         }
+        returned_state
     }
 }
 

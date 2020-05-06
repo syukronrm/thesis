@@ -58,12 +58,31 @@ impl Graph {
     }
 
     pub fn convert_object_as_node(&mut self, object: Arc<DataObject>) -> NodeId {
-        let new_node_ids = self.convert_objects_as_node(object.edge_id, vec![object]);
+        let new_node_ids = self.convert_objects_as_node_in_edge(object.edge_id, vec![object]);
         *new_node_ids.first().unwrap()
     }
 
-    #[allow(dead_code, unused_variables)]
-    fn convert_objects_as_node(
+    pub fn convert_objects_to_node(&mut self, mut objects: Vec<Arc<DataObject>>) -> Vec<NodeId> {
+        let mut map_edge_id: HashMap<EdgeId, Vec<Arc<DataObject>>> = HashMap::new();
+
+        for o in objects {
+            if let Some(vec_arc) = map_edge_id.get_mut(&o.edge_id) {
+                vec_arc.push(o);
+            } else {
+                map_edge_id.insert(o.edge_id, vec![o]);
+            }
+        }
+
+        let mut node_ids = Vec::new();
+        for (edge_id, vec_arc) in map_edge_id {
+            let res = self.convert_objects_as_node_in_edge(edge_id, vec_arc);
+            node_ids.append(&mut res.clone());
+        }
+        node_ids
+    }
+
+    #[allow(dead_code)]
+    fn convert_objects_as_node_in_edge(
         &mut self,
         edge_id: EdgeId,
         mut objects: Vec<Arc<DataObject>>,
@@ -124,7 +143,13 @@ impl Graph {
         })
     }
 
-    fn add_edge(&mut self, edge_id: EdgeId, prev_node_id: NodeId, node_id: NodeId, objects: Vec<Arc<DataObject>>) {
+    fn add_edge(
+        &mut self,
+        edge_id: EdgeId,
+        prev_node_id: NodeId,
+        node_id: NodeId,
+        objects: Vec<Arc<DataObject>>,
+    ) {
         let edge_len = self.node_distance(prev_node_id, node_id);
         let mut new_edge = Edge::new(edge_id, edge_len, prev_node_id, node_id);
         new_edge.add_objects(objects);
@@ -164,6 +189,14 @@ impl Graph {
     pub fn edge_len(&self, a: NodeId, b: NodeId) -> f32 {
         let edge = self.inner.edge_weight(a, b).unwrap();
         edge.len
+    }
+
+    pub fn edge_id(&self, a: NodeId, b: NodeId) -> Option<EdgeId> {
+       if let Some(edge) = self.inner.edge_weight(a, b) {
+           Some(edge.id)
+       } else {
+           None
+       }
     }
 
     pub fn objects(&self, a: NodeId, b: NodeId) -> Vec<Arc<DataObject>> {
@@ -225,7 +258,7 @@ mod tests {
             new_object(102, 3, 0.8),
         ];
 
-        let new_node_ids = graph.convert_objects_as_node(3, objects);
+        let new_node_ids = graph.convert_objects_as_node_in_edge(3, objects);
 
         assert_eq!(new_node_ids.len(), 3);
 

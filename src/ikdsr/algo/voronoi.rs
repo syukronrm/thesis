@@ -4,9 +4,14 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 #[derive(Clone)]
-struct Voronoi {}
+struct Voronoi {
+    node_map: HashMap<NodeId, Vec<f32>>,
+}
 
-impl Voronoi {}
+impl Voronoi {
+    #[allow(dead_code)]
+    pub fn initial_voronoi(graph: &mut Graph, dom_traverse: DomTraverse) {}
+}
 
 #[derive(Debug)]
 struct DomTraverse {

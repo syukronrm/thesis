@@ -192,11 +192,15 @@ impl Graph {
     }
 
     pub fn edge_id(&self, a: NodeId, b: NodeId) -> Option<EdgeId> {
-       if let Some(edge) = self.inner.edge_weight(a, b) {
-           Some(edge.id)
-       } else {
-           None
-       }
+        if let Some(edge) = self.inner.edge_weight(a, b) {
+            Some(edge.id)
+        } else {
+            None
+        }
+    }
+
+    pub fn edge(&self, a: NodeId, b: NodeId) -> Option<&Edge> {
+        self.inner.edge_weight(a, b)
     }
 
     pub fn objects(&self, a: NodeId, b: NodeId) -> Vec<Arc<DataObject>> {

@@ -2,7 +2,7 @@ use crate::prelude::*;
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Edge {
     pub id: EdgeId,
     pub len: f32,
@@ -52,7 +52,7 @@ impl Edge {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct BTreeResult {
     inner: HashMap<QueryId, BTreeMap<f32, ObjectId>>,
 }

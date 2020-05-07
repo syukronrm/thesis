@@ -3,14 +3,12 @@ use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap};
 use std::sync::Arc;
 
-type CentroidId = NodeId;
-
-struct VoronoiMinHeap<'a> {
+pub struct VoronoiMinHeap<'a> {
     pub graph: &'a Graph,
     pub max_dist: f32,
     pub min_heap: BinaryHeap<TraverseState>,
     pub cost_map: HashMap<NodeId, (NodeId, f32)>,
-    visited: HashMap<EdgeId, bool>, // key = node_id, value = centroid
+    visited: HashMap<EdgeId, bool>,
 }
 
 impl<'a> VoronoiMinHeap<'a> {
@@ -25,6 +23,7 @@ impl<'a> VoronoiMinHeap<'a> {
                 centroid_pt_in_ne: centroid_id,
                 start_node_id: centroid_id,
                 end_node_id: centroid_id,
+                edge: None,
             });
         }
 
@@ -79,6 +78,7 @@ impl<'a> Iterator for VoronoiMinHeap<'a> {
                 centroid_pt_in_ne: _,
                 start_node_id,
                 end_node_id,
+                edge: _,
             } = state;
 
             if cost_ct_to_ns > self.max_dist * 2.0 {
@@ -94,21 +94,31 @@ impl<'a> Iterator for VoronoiMinHeap<'a> {
                     continue;
                 }
 
-                let cost_next = cost_ct_to_ne + self.graph.edge_len(node_id, end_node_id);
+                let edge = self.graph.edge(node_id, end_node_id);
+                let cost_next = {
+                    if let Some(edge) = edge {
+                        cost_ct_to_ne + edge.len
+                    } else {
+                        cost_ct_to_ne
+                    }
+                };
                 let some_cost = self.cost_map.get_mut(&node_id);
                 if let Some(struct_cost) = some_cost {
                     let (existing_centroid, prev_cost) = struct_cost.clone();
-                    if (existing_centroid == centroid_ct_in_ns && cost_next < prev_cost) || (existing_centroid != centroid_ct_in_ns) {
-                            *struct_cost = (centroid_ct_in_ns, cost_next);
-                            self.min_heap.push(TraverseState {
-                                cost_ct_to_ns: cost_ct_to_ne,
-                                cost_ct_to_ne: cost_next,
-                                cost_pt_to_ne: prev_cost,
-                                centroid_ct_in_ns: centroid_ct_in_ns,
-                                centroid_pt_in_ne: existing_centroid,
-                                start_node_id: end_node_id,
-                                end_node_id: node_id,
-                            });
+                    if (existing_centroid == centroid_ct_in_ns && cost_next < prev_cost)
+                        || (existing_centroid != centroid_ct_in_ns)
+                    {
+                        *struct_cost = (centroid_ct_in_ns, cost_next);
+                        self.min_heap.push(TraverseState {
+                            cost_ct_to_ns: cost_ct_to_ne,
+                            cost_ct_to_ne: cost_next,
+                            cost_pt_to_ne: prev_cost,
+                            centroid_ct_in_ns: centroid_ct_in_ns,
+                            centroid_pt_in_ne: existing_centroid,
+                            start_node_id: end_node_id,
+                            end_node_id: node_id,
+                            edge: SimpleEdge::from_some(edge),
+                        });
                     }
                 } else {
                     self.cost_map
@@ -121,6 +131,7 @@ impl<'a> Iterator for VoronoiMinHeap<'a> {
                         centroid_pt_in_ne: 0,
                         start_node_id: end_node_id,
                         end_node_id: node_id,
+                        edge: SimpleEdge::from_some(edge),
                     });
                 }
             }
@@ -136,7 +147,7 @@ impl<'a> Iterator for VoronoiMinHeap<'a> {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct TraverseState {
     pub cost_ct_to_ns: f32,            // cost of current traverse to node start
     pub cost_ct_to_ne: f32,            // cost of current traverse to node end
@@ -145,6 +156,7 @@ pub struct TraverseState {
     pub centroid_pt_in_ne: CentroidId, // centroid of previous traverse in node end
     pub start_node_id: NodeId,         // node start
     pub end_node_id: NodeId,           // node end
+    pub edge: Option<SimpleEdge>,
 }
 
 impl Ord for TraverseState {
@@ -179,6 +191,29 @@ impl PartialEq for TraverseState {
 }
 
 impl Eq for TraverseState {}
+
+#[derive(Copy, Clone, Debug)]
+pub struct SimpleEdge {
+    pub id: EdgeId,
+    pub ni: NodeId,
+    pub nj: NodeId,
+    pub len: f32,
+}
+
+impl SimpleEdge {
+    pub fn from_some(edge: Option<&Edge>) -> Option<Self> {
+        if let Some(e) = edge {
+            Some(SimpleEdge {
+                id: e.id,
+                ni: e.ni,
+                nj: e.nj,
+                len: e.len,
+            })
+        } else {
+            None
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {

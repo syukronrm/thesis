@@ -7,13 +7,14 @@ pub struct VoronoiMinHeap<'a> {
     graph: &'a Graph,
     pub max_dist: f32,
     pub min_heap: BinaryHeap<TraverseState>,
-    pub cost_map: HashMap<NodeId, (NodeId, f32)>,
+    pub cost_map: HashMap<NodeId, (CentroidId, f32)>,
     visited: HashMap<EdgeId, bool>,
 }
 
 impl<'a> VoronoiMinHeap<'a> {
     pub fn new(graph: &'a mut Graph, centroid_ids: Vec<CentroidId>) -> Self {
         let mut min_heap = BinaryHeap::new();
+        let mut cost_map = HashMap::new();
         for centroid_id in centroid_ids {
             min_heap.push(TraverseState {
                 cost_ct_to_ns: 0.0,
@@ -25,6 +26,8 @@ impl<'a> VoronoiMinHeap<'a> {
                 end_node_id: centroid_id,
                 edge: None,
             });
+
+           cost_map.insert(centroid_id, (centroid_id, 0.0));
         }
 
         VoronoiMinHeap {

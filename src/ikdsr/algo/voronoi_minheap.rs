@@ -4,7 +4,7 @@ use std::collections::{BinaryHeap, HashMap};
 use std::sync::Arc;
 
 pub struct VoronoiMinHeap<'a> {
-    pub graph: &'a Graph,
+    graph: &'a Graph,
     pub max_dist: f32,
     pub min_heap: BinaryHeap<TraverseState>,
     pub cost_map: HashMap<NodeId, (NodeId, f32)>,
@@ -37,7 +37,11 @@ impl<'a> VoronoiMinHeap<'a> {
     }
 
     pub fn from_objects(graph: &'a mut Graph, centroids: Vec<Arc<DataObject>>) -> Self {
-        let centroid_ids = graph.convert_objects_to_node(centroids);
+        graph.convert_objects_to_node(centroids);
+        let mut centroid_ids = Vec::new();
+        for (_edge_id, mut node_ids) in graph.map_new_edge_node() {
+            centroid_ids.append(&mut node_ids);
+        }
         Self::new(graph, centroid_ids)
     }
 
@@ -61,6 +65,10 @@ impl<'a> VoronoiMinHeap<'a> {
             }
         }
         false
+    }
+
+    pub fn map_new_edge_node(&self) -> HashMap<EdgeId, Vec<NodeId>> {
+        self.graph.map_new_edge_node()
     }
 }
 

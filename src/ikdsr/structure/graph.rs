@@ -10,6 +10,7 @@ pub struct Graph {
     objects: HashMap<ObjectId, Arc<DataObject>>,
     map_nodes: HashMap<NodeId, Arc<DataNode>>,
     map_edges: HashMap<EdgeId, Arc<DataEdge>>,
+    map_new_edge_node: HashMap<EdgeId, Vec<NodeId>>,
     inner: GraphMap<NodeId, Edge, Undirected>,
 }
 
@@ -21,6 +22,7 @@ impl Graph {
             objects: HashMap::new(),
             map_nodes: HashMap::new(),
             map_edges: HashMap::new(),
+            map_new_edge_node: HashMap::new(),
             inner: graph,
         };
         itself.initial_network();
@@ -62,7 +64,7 @@ impl Graph {
         *new_node_ids.first().unwrap()
     }
 
-    pub fn convert_objects_to_node(&mut self, mut objects: Vec<Arc<DataObject>>) -> Vec<NodeId> {
+    pub fn convert_objects_to_node(&mut self, mut objects: Vec<Arc<DataObject>>) -> HashMap<EdgeId, Vec<NodeId>> {
         let mut map_edge_id: HashMap<EdgeId, Vec<Arc<DataObject>>> = HashMap::new();
 
         for o in objects {
@@ -73,12 +75,13 @@ impl Graph {
             }
         }
 
-        let mut node_ids = Vec::new();
+        let mut map_edge_node = HashMap::new();
         for (edge_id, vec_arc) in map_edge_id {
             let res = self.convert_objects_as_node_in_edge(edge_id, vec_arc);
-            node_ids.append(&mut res.clone());
+            map_edge_node.insert(edge_id, res.clone());
         }
-        node_ids
+        self.map_new_edge_node = map_edge_node.clone();
+        map_edge_node
     }
 
     #[allow(dead_code)]
@@ -206,6 +209,10 @@ impl Graph {
     pub fn objects(&self, a: NodeId, b: NodeId) -> Vec<Arc<DataObject>> {
         let edge_weight = self.inner.edge_weight(a, b).unwrap();
         edge_weight.objects.clone()
+    }
+
+    pub fn map_new_edge_node(&self) -> HashMap<EdgeId, Vec<NodeId>> {
+        self.map_new_edge_node.clone()
     }
 
     fn as_node_id(o: &Arc<DataObject>) -> NodeId {

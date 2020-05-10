@@ -222,6 +222,10 @@ impl Graph {
         self.objects.get(&object_id).unwrap().clone()
     }
 
+    pub fn all_objects(&self) -> Vec<Arc<DataObject>> {
+        self.objects.iter().map(|(_, o)| o.clone()).collect()
+    }
+
     pub fn nodes(&self) -> Nodes<NodeId> {
         self.inner.nodes()
     }
@@ -258,6 +262,10 @@ impl Graph {
 
     pub fn map_new_node(&self) -> HashMap<EdgeId, Vec<NodeId>> {
         self.map_new_node.clone()
+    }
+
+    pub fn all_edge_ids(&self) -> Vec<EdgeId> {
+        self.inner.all_edges().map(|(_, _, e)| e.id).collect()
     }
 
     fn as_node_id(o: &Arc<DataObject>) -> NodeId {

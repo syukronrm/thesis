@@ -4,23 +4,23 @@ use crate::prelude::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-#[derive(Clone)]
-struct Voronoi {
-    node_map: HashMap<NodeId, Vec<f32>>,
-    voronoi: HashMap<EdgeId, Vec<Range>>,
+#[derive(Clone, Debug)]
+pub struct Voronoi {
+    scope: HashMap<EdgeId, Vec<Range>>,
 }
 
 impl Voronoi {
-    pub fn initial_voronoi(graph: &mut Graph, object: Arc<DataObject>) -> Self {
+    pub fn initial_voronoi(graph: &mut Graph, object_id: ObjectId) -> Self {
         let max_distance = graph.config.max_dist * 2.0;
-        let dom_traverse = DomTraverse::dominate_dominated_by_from_id(graph, object.id);
+        let dom_traverse = DomTraverse::dominate_dominated_by_from_id(graph, object_id);
         let dominated_by_objects = dom_traverse.dominated_by_objects();
-        let dominated_by_vec: Vec<ObjectId> = dominated_by_objects.keys().map(|k| *k).collect();
-        let min_heap = VoronoiMinHeap::new(graph, dominated_by_vec);
+        let mut dominated_by_vec: Vec<ObjectId> = dominated_by_objects.keys().map(|k| *k).collect();
+        dominated_by_vec.push(object_id);
+        let centroid_ids = graph.convert_object_ids_to_node(dominated_by_vec);
+        let min_heap = VoronoiMinHeap::new(graph, centroid_ids);
 
         let mut voronoi = Self {
-            node_map: HashMap::new(),
-            voronoi: HashMap::new(),
+            scope: HashMap::new(),
         };
 
         for state in min_heap {
@@ -31,7 +31,7 @@ impl Voronoi {
                 centroid_ct_in_ns,
                 centroid_pt_in_ne,
                 start_node_id,
-                end_node_id,
+                end_node_id: _,
                 edge,
             } = state;
             let edge = edge.unwrap();
@@ -53,14 +53,14 @@ impl Voronoi {
                         end: start.min(end),
                         centroid_id: centroid_ct_in_ns,
                     };
-                    voronoi.add_range(range, edge.id);
+                    voronoi.add_scope(range, edge.id);
                 } else {
                     let range = Range {
                         start: 0.0,
                         end: edge.len,
                         centroid_id: centroid_ct_in_ns,
                     };
-                    voronoi.add_range(range, edge.id);
+                    voronoi.add_scope(range, edge.id);
                 }
             } else {
                 let center_dist =
@@ -71,41 +71,71 @@ impl Voronoi {
                         end: center_dist,
                         centroid_id: centroid_ct_in_ns,
                     };
-                    voronoi.add_range(range, edge.id);
+                    voronoi.add_scope(range, edge.id);
 
                     let range = Range {
                         start: center_dist,
                         end: edge.len,
                         centroid_id: centroid_pt_in_ne,
                     };
-                    voronoi.add_range(range, edge.id);
+                    voronoi.add_scope(range, edge.id);
                 } else {
-                    let center_dist = edge.len - center_dist;
+                    let c = edge.len - center_dist;
                     let range = Range {
-                        start: center_dist,
+                        start: c,
                         end: edge.len,
                         centroid_id: centroid_ct_in_ns,
                     };
-                    voronoi.add_range(range, edge.id);
+                    voronoi.add_scope(range, edge.id);
 
                     let range = Range {
                         start: 0.0,
-                        end: center_dist,
+                        end: c,
                         centroid_id: centroid_pt_in_ne,
                     };
-                    voronoi.add_range(range, edge.id);
+                    voronoi.add_scope(range, edge.id);
                 }
             }
         }
 
+        voronoi.convert_voronoi_to_original_edge(graph.map_new_edge());
         voronoi
     }
 
-    pub fn add_range(&mut self, range: Range, edge_id: EdgeId) {
-        if let Some(ranges) = self.voronoi.get_mut(&edge_id) {
+    fn add_scope(&mut self, range: Range, edge_id: EdgeId) {
+        if let Some(ranges) = self.scope.get_mut(&edge_id) {
             ranges.push(range);
         } else {
-            self.voronoi.insert(edge_id, vec![range]);
+            self.scope.insert(edge_id, vec![range]);
+        }
+    }
+
+    fn convert_voronoi_to_original_edge(&mut self, map_new_edge: HashMap<EdgeId, Vec<EdgeId>>) {
+        for (edge_id, vec_new_edge_id) in map_new_edge {
+            let mut adjusted_scopes: HashMap<CentroidId, Range> = HashMap::new();
+            let mut start_range = 0.0;
+            for new_edge_id in vec_new_edge_id {
+                let mut scopes = self.scope.get(&new_edge_id).unwrap().clone();
+                scopes.sort_by(|a, b| a.start.partial_cmp(&b.start).unwrap());
+                for scope in scopes {
+                    if let Some(s) = adjusted_scopes.get_mut(&scope.centroid_id) {
+                        s.end = s.end + scope.end;
+                        start_range = s.end;
+                    } else {
+                        let new_scope = Range {
+                            start: start_range,
+                            end: start_range + (scope.end - scope.start),
+                            centroid_id: scope.centroid_id,
+                        };
+                        start_range = new_scope.end;
+                        adjusted_scopes.insert(scope.centroid_id, new_scope);
+                    }
+                }
+                self.scope.remove(&new_edge_id);
+            }
+            let ranges: Vec<Range> = adjusted_scopes.values().map(|v| v.clone()).collect();
+            self.scope.remove(&edge_id);
+            self.scope.insert(edge_id, ranges);
         }
     }
 }
@@ -126,7 +156,6 @@ struct DomTraverse {
 
 impl DomTraverse {
     /// Get objects dominate and dominated by originator.
-    #[allow(dead_code)]
     fn dominate_dominated_by(graph: &mut Graph, originator: Arc<DataObject>) -> Self {
         let centroid_id = graph.convert_object_as_node(originator.clone());
         let bfs = BfsMinHeap::new(graph, centroid_id);
@@ -205,7 +234,7 @@ mod tests {
     use std::sync::Arc;
 
     #[test]
-    fn compute() {
+    fn dom_traverse_test() {
         let conf = Arc::new(AppConfig::default());
         let mut graph = Graph::new(conf);
         let object_id = 3;
@@ -214,5 +243,14 @@ mod tests {
         assert_eq!(result.dominated_by.get(&2).unwrap().len(), 1);
 
         println!("{:#?}", result);
+    }
+
+    #[test]
+    fn voronoi_test() {
+        let conf = Arc::new(AppConfig::default());
+        let mut graph = Graph::new(conf);
+        let object_id = 2;
+        let voronoi = Voronoi::initial_voronoi(&mut graph, object_id);
+        println!("{:#?}", voronoi);
     }
 }

@@ -50,6 +50,15 @@ impl Edge {
             })
             .collect()
     }
+
+    pub fn as_data_edge(&self) -> DataEdge {
+        DataEdge {
+            id: self.id,
+            ni: self.ni,
+            nj: self.nj,
+            len: self.len,
+        }
+    }
 }
 
 #[derive(Clone, Debug)]

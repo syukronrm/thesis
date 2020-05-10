@@ -10,7 +10,8 @@ pub struct Graph {
     objects: HashMap<ObjectId, Arc<DataObject>>,
     map_nodes: HashMap<NodeId, Arc<DataNode>>,
     map_edges: HashMap<EdgeId, Arc<DataEdge>>,
-    map_new_edge_node: HashMap<EdgeId, Vec<NodeId>>,
+    map_new_edge: HashMap<EdgeId, Vec<EdgeId>>,
+    map_new_node: HashMap<EdgeId, Vec<NodeId>>,
     inner: GraphMap<NodeId, Edge, Undirected>,
 }
 
@@ -22,7 +23,8 @@ impl Graph {
             objects: HashMap::new(),
             map_nodes: HashMap::new(),
             map_edges: HashMap::new(),
-            map_new_edge_node: HashMap::new(),
+            map_new_edge: HashMap::new(),
+            map_new_node: HashMap::new(),
             inner: graph,
         };
         itself.initial_network();
@@ -60,11 +62,16 @@ impl Graph {
     }
 
     pub fn convert_object_as_node(&mut self, object: Arc<DataObject>) -> NodeId {
-        let new_node_ids = self.convert_objects_as_node_in_edge(object.edge_id, vec![object]);
+        let (_, new_node_ids) = self.convert_objects_as_node_in_edge(object.edge_id, vec![object]);
         *new_node_ids.first().unwrap()
     }
 
-    pub fn convert_objects_to_node(&mut self, mut objects: Vec<Arc<DataObject>>) -> HashMap<EdgeId, Vec<NodeId>> {
+    #[allow(dead_code)]
+    pub fn convert_objects_to_node(
+        &mut self,
+        objects: Vec<Arc<DataObject>>,
+    ) -> HashMap<EdgeId, Vec<NodeId>> {
+        self.clean();
         let mut map_edge_id: HashMap<EdgeId, Vec<Arc<DataObject>>> = HashMap::new();
 
         for o in objects {
@@ -75,21 +82,33 @@ impl Graph {
             }
         }
 
-        let mut map_edge_node = HashMap::new();
+        let mut map_new_edge = HashMap::new();
         for (edge_id, vec_arc) in map_edge_id {
-            let res = self.convert_objects_as_node_in_edge(edge_id, vec_arc);
-            map_edge_node.insert(edge_id, res.clone());
+            let (vec_edge, _vec_node) = self.convert_objects_as_node_in_edge(edge_id, vec_arc);
+            map_new_edge.insert(edge_id, vec_edge);
         }
-        self.map_new_edge_node = map_edge_node.clone();
-        map_edge_node
+        map_new_edge
     }
 
-    #[allow(dead_code)]
+    pub fn convert_object_ids_to_node(&mut self, object_ids: Vec<NodeId>) -> Vec<CentroidId> {
+        let mut objects = Vec::new();
+        for object_id in object_ids {
+            let object = self.objects.get(&object_id).unwrap().clone();
+            objects.push(object);
+        }
+        self.convert_objects_to_node(objects);
+        let mut centroid_ids = Vec::new();
+        for (_, vec_node) in &mut self.map_new_node.clone() {
+            centroid_ids.append(vec_node);
+        }
+        centroid_ids
+    }
+
     fn convert_objects_as_node_in_edge(
         &mut self,
         edge_id: EdgeId,
         mut objects: Vec<Arc<DataObject>>,
-    ) -> Vec<NodeId> {
+    ) -> (Vec<EdgeId>, Vec<NodeId>) {
         let edge = self.map_edges.get(&edge_id).unwrap();
         let edge = self.inner.edge_weight(edge.ni, edge.nj).unwrap().clone();
         objects.sort_by(|a, b| a.dist.partial_cmp(&b.dist).unwrap());
@@ -98,6 +117,7 @@ impl Graph {
 
         let mut prev_node_id = edge.ni;
         let last_node_id = edge.nj;
+        let mut new_edge_ids = Vec::new();
         let mut new_node_ids = Vec::new();
         let mut prev_dist = 0.0;
 
@@ -114,19 +134,24 @@ impl Graph {
             let prev_edge_id = Self::object_as_edge_id(o.id);
             let objects = edge.objects_in_between(prev_dist, o.dist);
             self.add_edge(prev_edge_id, prev_node_id, new_node_id, objects);
+            new_edge_ids.push(prev_edge_id);
 
             // insert new edge after object
             if last_object.unwrap().id == o.id {
                 let next_edge_id = Self::object_as_last_edge_id(o.id);
                 let objects = edge.objects_in_between(o.dist, 1.0);
                 self.add_edge(next_edge_id, new_node_id, last_node_id, objects);
+                new_edge_ids.push(next_edge_id);
             }
 
             prev_node_id = new_node_id;
             prev_dist = o.dist;
         }
 
-        new_node_ids
+        self.map_new_edge.insert(edge_id, new_edge_ids.clone());
+        self.map_new_node.insert(edge_id, new_node_ids.clone());
+
+        (new_edge_ids, new_node_ids)
     }
 
     fn create_node_from_object(
@@ -156,6 +181,8 @@ impl Graph {
         let edge_len = self.node_distance(prev_node_id, node_id);
         let mut new_edge = Edge::new(edge_id, edge_len, prev_node_id, node_id);
         new_edge.add_objects(objects);
+        let data_edge = new_edge.as_data_edge();
+        self.map_edges.insert(data_edge.id, Arc::new(data_edge));
         self.inner.add_edge(prev_node_id, node_id, new_edge);
     }
 
@@ -179,6 +206,16 @@ impl Graph {
         }
         self.map_nodes.remove(&n);
         self.inner.remove_node(n);
+    }
+
+    pub fn clean(&mut self) {
+        for (_, node_ids) in self.map_new_node.clone() {
+            for node_id in node_ids {
+                self.remove_node(node_id)
+            }
+        }
+        self.map_new_edge = HashMap::new();
+        self.map_new_node = HashMap::new();
     }
 
     pub fn object(&self, object_id: ObjectId) -> Arc<DataObject> {
@@ -206,13 +243,21 @@ impl Graph {
         self.inner.edge_weight(a, b)
     }
 
+    pub fn edge_by_edge_id(&self, e: EdgeId) -> Arc<DataEdge> {
+        self.map_edges.get(&e).unwrap().clone()
+    }
+
     pub fn objects(&self, a: NodeId, b: NodeId) -> Vec<Arc<DataObject>> {
         let edge_weight = self.inner.edge_weight(a, b).unwrap();
         edge_weight.objects.clone()
     }
 
-    pub fn map_new_edge_node(&self) -> HashMap<EdgeId, Vec<NodeId>> {
-        self.map_new_edge_node.clone()
+    pub fn map_new_edge(&self) -> HashMap<EdgeId, Vec<EdgeId>> {
+        self.map_new_edge.clone()
+    }
+
+    pub fn map_new_node(&self) -> HashMap<EdgeId, Vec<NodeId>> {
+        self.map_new_node.clone()
     }
 
     fn as_node_id(o: &Arc<DataObject>) -> NodeId {
@@ -269,7 +314,7 @@ mod tests {
             new_object(102, 3, 0.8),
         ];
 
-        let new_node_ids = graph.convert_objects_as_node_in_edge(3, objects);
+        let (_new_edge_ids, new_node_ids) = graph.convert_objects_as_node_in_edge(3, objects);
 
         assert_eq!(new_node_ids.len(), 3);
 

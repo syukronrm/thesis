@@ -16,25 +16,35 @@ impl<'a> VoronoiMinHeap<'a> {
         let mut min_heap = BinaryHeap::new();
         let mut cost_map = HashMap::new();
         for centroid_id in centroid_ids {
-            min_heap.push(TraverseState {
-                cost_ct_to_ns: 0.0,
-                cost_ct_to_ne: 0.0,
-                cost_pt_to_ne: 0.0,
-                centroid_ct_in_ns: centroid_id,
-                centroid_pt_in_ne: centroid_id,
-                start_node_id: centroid_id,
-                end_node_id: centroid_id,
-                edge: None,
-            });
+            for node_id in graph.neighbors(centroid_id) {
+                let edge = graph.edge(node_id, centroid_id).unwrap();
+                min_heap.push(TraverseState {
+                    cost_ct_to_ns: 0.0,
+                    cost_ct_to_ne: edge.len,
+                    cost_pt_to_ne: 0.0,
+                    centroid_ct_in_ns: centroid_id,
+                    centroid_pt_in_ne: 0,
+                    start_node_id: centroid_id,
+                    end_node_id: node_id,
+                    edge: SimpleEdge::from_some(Some(edge)),
+                });
 
-           cost_map.insert(centroid_id, (centroid_id, 0.0));
+                if let Some((_cen, cost)) = cost_map.get(&node_id) {
+                    if *cost > edge.len {
+                        cost_map.insert(node_id, (centroid_id, edge.len));
+                    }
+                } else {
+                    cost_map.insert(node_id, (centroid_id, edge.len));
+                }
+                cost_map.insert(centroid_id, (centroid_id, 0.0));
+            }
         }
 
         VoronoiMinHeap {
             graph,
             max_dist: graph.config.max_dist,
             min_heap,
-            cost_map: HashMap::new(),
+            cost_map,
             visited: HashMap::new(),
         }
     }
@@ -42,7 +52,7 @@ impl<'a> VoronoiMinHeap<'a> {
     pub fn from_objects(graph: &'a mut Graph, centroids: Vec<Arc<DataObject>>) -> Self {
         graph.convert_objects_to_node(centroids);
         let mut centroid_ids = Vec::new();
-        for (_edge_id, mut node_ids) in graph.map_new_edge_node() {
+        for (_edge_id, mut node_ids) in graph.map_new_node() {
             centroid_ids.append(&mut node_ids);
         }
         Self::new(graph, centroid_ids)
@@ -70,8 +80,8 @@ impl<'a> VoronoiMinHeap<'a> {
         false
     }
 
-    pub fn map_new_edge_node(&self) -> HashMap<EdgeId, Vec<NodeId>> {
-        self.graph.map_new_edge_node()
+    pub fn map_new_edge(&self) -> HashMap<EdgeId, Vec<NodeId>> {
+        self.graph.map_new_edge()
     }
 }
 
@@ -80,7 +90,7 @@ impl<'a> Iterator for VoronoiMinHeap<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut returned_state = None;
-        while let Some(state) = self.min_heap.pop() {
+        while let Some(mut state) = self.min_heap.pop() {
             let TraverseState {
                 cost_ct_to_ns,
                 cost_ct_to_ne,
@@ -91,6 +101,11 @@ impl<'a> Iterator for VoronoiMinHeap<'a> {
                 end_node_id,
                 edge: _,
             } = state;
+
+            if let Some((centroid_id, cost)) = self.cost_map.get(&state.end_node_id) {
+                state.centroid_pt_in_ne = *centroid_id;
+                state.cost_pt_to_ne = *cost;
+            }
 
             if cost_ct_to_ns > self.max_dist * 2.0 {
                 continue;
@@ -119,7 +134,9 @@ impl<'a> Iterator for VoronoiMinHeap<'a> {
                     if (existing_centroid == centroid_ct_in_ns && cost_next < prev_cost)
                         || (existing_centroid != centroid_ct_in_ns)
                     {
-                        *struct_cost = (centroid_ct_in_ns, cost_next);
+                        if cost_next < prev_cost {
+                            *struct_cost = (centroid_ct_in_ns, cost_next);
+                        }
                         self.min_heap.push(TraverseState {
                             cost_ct_to_ns: cost_ct_to_ne,
                             cost_ct_to_ne: cost_next,
@@ -234,7 +251,7 @@ mod tests {
     fn new_voronoi_minheap() {
         let conf = Arc::new(AppConfig::default());
         let mut graph = Graph::new(conf);
-        let voronoi_minheap = VoronoiMinHeap::new(&mut graph, vec![2, 5]);
+        let voronoi_minheap = VoronoiMinHeap::new(&mut graph, vec![1, 2, 3]);
 
         let mut count = 0;
         for state in voronoi_minheap {

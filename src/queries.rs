@@ -6,12 +6,6 @@ pub struct Queries {
     inner: Vec<Group>,
 }
 
-#[derive(Clone)]
-pub struct Group {
-    dimensions: Vec<DimensionIndex>,
-    queries: Vec<Arc<Query>>,
-}
-
 impl Queries {
     pub fn new(queries: Vec<Arc<Query>>) -> Self {
         let mut groups: HashMap<Vec<DimensionIndex>, Group> = HashMap::new();
@@ -38,15 +32,40 @@ impl Queries {
     fn length(&self) -> usize {
         self.inner.len()
     }
+
+    pub fn iter(&self) -> QueryIterator {
+        QueryIterator::new(&self.inner)
+    }
 }
 
-impl IntoIterator for Queries {
-    type Item = Group;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
+pub struct QueryIterator<'a> {
+    queries: &'a Vec<Group>,
+    index: usize,
+}
 
-    fn into_iter(self) -> Self::IntoIter {
-        self.inner.into_iter()
+impl<'a> QueryIterator<'a> {
+    fn new(queries: &'a Vec<Group>) -> Self {
+        QueryIterator {
+            queries: queries,
+            index: 0,
+        }
     }
+}
+
+impl<'a> Iterator for QueryIterator<'a> {
+    type Item = &'a Group;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let g = self.queries.get(self.index);
+        self.index += 1;
+        g
+    }
+}
+
+#[derive(Clone)]
+pub struct Group {
+    dimensions: Vec<DimensionIndex>,
+    queries: Vec<Arc<Query>>,
 }
 
 impl IntoIterator for Group {
@@ -74,7 +93,7 @@ mod tests {
         assert_eq!(queries.length(), 2);
 
         let mut is_exists = false;
-        for q in queries {
+        for q in queries.iter() {
             if q.dimensions == vec![1, 2, 3, 4] {
                 assert_eq!(q.queries.len(), 2);
                 is_exists = true;

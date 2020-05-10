@@ -29,6 +29,7 @@ impl Queries {
         Queries { inner }
     }
 
+    #[cfg(test)]
     fn length(&self) -> usize {
         self.inner.len()
     }

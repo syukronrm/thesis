@@ -68,12 +68,33 @@ pub struct Group {
     queries: Vec<Arc<Query>>,
 }
 
-impl IntoIterator for Group {
-    type Item = Arc<Query>;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
+impl Group {
+    pub fn iter(&self) -> GroupIterator {
+        GroupIterator::new(&self.queries)
+    }
+}
 
-    fn into_iter(self) -> Self::IntoIter {
-        self.queries.into_iter()
+pub struct GroupIterator<'a> {
+    queries: &'a Vec<Arc<Query>>,
+    index: usize,
+}
+
+impl<'a> GroupIterator<'a> {
+    fn new(queries: &'a Vec<Arc<Query>>) -> Self {
+        GroupIterator { queries, index: 0 }
+    }
+}
+
+impl<'a> Iterator for GroupIterator<'a> {
+    type Item = (usize, &'a Arc<Query>);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(q) = self.queries.get(self.index) {
+            self.index += 1;
+            Some((self.index - 1, q))
+        } else {
+            None
+        }
     }
 }
 

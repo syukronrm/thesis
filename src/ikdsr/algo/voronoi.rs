@@ -252,5 +252,16 @@ mod tests {
         let object_id = 2;
         let voronoi = Voronoi::initial_voronoi(&mut graph, object_id);
         println!("{:#?}", voronoi);
+
+        let tests = [(4, 1), (2, 1), (1, 1), (5, 2), (3, 2)];
+        for (edge_id, range_len) in tests.iter() {
+            let mut is_exist = false;
+            for (e, ranges) in &voronoi.scope {
+                if e == edge_id && ranges.len() == *range_len {
+                    is_exist = true;
+                }
+            }
+            assert!(is_exist);
+        }
     }
 }

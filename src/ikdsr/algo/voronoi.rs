@@ -18,13 +18,13 @@ impl Voronoi {
         let centroid_ids = graph.convert_object_ids_to_node(dominated_by_vec);
         let mut map_objects_k = dom_traverse.map_dominated_by_objects_k();
         map_objects_k.insert(object_id, graph.config.max_dim);
-        let min_heap = VoronoiMinHeap::new(graph, centroid_ids, map_objects_k);
+        let mut min_heap = VoronoiMinHeap::new(graph, centroid_ids, map_objects_k);
 
         let mut voronoi = Self {
             scope: HashMap::new(),
         };
 
-        for state in min_heap {
+        for state in min_heap.by_ref() {
             let State {
                 cost_ct_to_ns,
                 cost_ct_to_ne,

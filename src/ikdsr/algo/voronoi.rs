@@ -13,11 +13,12 @@ impl Voronoi {
     pub fn initial_voronoi(graph: &mut Graph, object_id: ObjectId) -> Self {
         let max_distance = graph.config.max_dist * 2.0;
         let dom_traverse = DomTraverse::dominate_dominated_by_from_id(graph, object_id);
-        let dominated_by_objects = dom_traverse.dominated_by_objects();
-        let mut dominated_by_vec: Vec<ObjectId> = dominated_by_objects.keys().map(|k| *k).collect();
+        let mut dominated_by_vec = dom_traverse.dominated_by_objects();
         dominated_by_vec.push(object_id);
         let centroid_ids = graph.convert_object_ids_to_node(dominated_by_vec);
-        let min_heap = VoronoiMinHeap::new(graph, centroid_ids);
+        let mut map_objects_k = dom_traverse.map_dominated_by_objects_k();
+        map_objects_k.insert(object_id, graph.config.max_dim);
+        let min_heap = VoronoiMinHeap::new(graph, centroid_ids, map_objects_k);
 
         let mut voronoi = Self {
             scope: HashMap::new(),
@@ -217,14 +218,24 @@ impl DomTraverse {
         Self::dominate_dominated_by(graph, object)
     }
 
-    fn dominated_by_objects(&self) -> HashMap<ObjectId, bool> {
-        let mut object_ids = HashMap::new();
+    fn dominated_by_objects(&self) -> Vec<ObjectId> {
+        let mut object_ids = Vec::new();
         for (_, vec_obj_id) in &self.dominated_by {
             for obj_id in vec_obj_id {
-                object_ids.insert(*obj_id, true);
+                object_ids.push(*obj_id);
             }
         }
         object_ids
+    }
+
+    fn map_dominated_by_objects_k(&self) -> HashMap<ObjectId, K> {
+        let mut map_objects_k = HashMap::new();
+        for (k, vec_object_id) in &self.dominated_by {
+            for obj_id in vec_object_id {
+                map_objects_k.insert(*obj_id, *k);
+            }
+        }
+        map_objects_k
     }
 }
 

@@ -9,10 +9,16 @@ pub struct VoronoiMinHeap<'a> {
     pub min_heap: BinaryHeap<TraverseState>,
     pub cost_map: HashMap<NodeId, (CentroidId, f32)>,
     visited: HashMap<EdgeId, bool>,
+    map_object_id_k: HashMap<ObjectId, K>,
+    map_centroid_edge_id: HashMap<EdgeId, (ObjectId, K)>,
 }
 
 impl<'a> VoronoiMinHeap<'a> {
-    pub fn new(graph: &'a mut Graph, centroid_ids: Vec<CentroidId>) -> Self {
+    pub fn new(
+        graph: &'a mut Graph,
+        centroid_ids: Vec<CentroidId>,
+        map_object_id_k: HashMap<ObjectId, K>,
+    ) -> Self {
         let mut min_heap = BinaryHeap::new();
         let mut cost_map = HashMap::new();
         for centroid_id in centroid_ids {
@@ -46,17 +52,19 @@ impl<'a> VoronoiMinHeap<'a> {
             min_heap,
             cost_map,
             visited: HashMap::new(),
+            map_object_id_k,
+            map_centroid_edge_id: HashMap::new(),
         }
     }
 
-    pub fn from_objects(graph: &'a mut Graph, centroids: Vec<Arc<DataObject>>) -> Self {
-        graph.convert_objects_to_node(centroids);
-        let mut centroid_ids = Vec::new();
-        for (_edge_id, mut node_ids) in graph.map_new_node() {
-            centroid_ids.append(&mut node_ids);
-        }
-        Self::new(graph, centroid_ids)
-    }
+    // pub fn from_objects(graph: &'a mut Graph, centroids: Vec<Arc<DataObject>>) -> Self {
+    //     graph.convert_objects_to_node(centroids);
+    //     let mut centroid_ids = Vec::new();
+    //     for (_edge_id, mut node_ids) in graph.map_new_node() {
+    //         centroid_ids.append(&mut node_ids);
+    //     }
+    //     Self::new(graph, centroid_ids)
+    // }
 
     /// Return true if already visited, if not visit it and return false.
     fn visit(&mut self, a: NodeId, b: NodeId) -> bool {
@@ -80,6 +88,31 @@ impl<'a> VoronoiMinHeap<'a> {
         false
     }
 
+    fn save_map_object_id_to_k(
+        &mut self,
+        edge: SimpleEdge,
+        s: NodeId,
+        e: NodeId,
+        curr: CentroidId,
+        prev: CentroidId,
+    ) {
+        if s != e {
+            if prev == 0 {
+                let k_curr = self.map_object_id_k.get(&curr).unwrap();
+                self.map_centroid_edge_id.insert(edge.id, (curr, *k_curr));
+            } else {
+                let k_curr = self.map_object_id_k.get(&curr).unwrap();
+                let k_prev = self.map_object_id_k.get(&prev).unwrap();
+
+                if k_curr < k_prev {
+                    self.map_centroid_edge_id.insert(edge.id, (curr, *k_curr));
+                } else {
+                    self.map_centroid_edge_id.insert(edge.id, (prev, *k_prev));
+                }
+            }
+        }
+    }
+
     pub fn map_new_edge(&self) -> HashMap<EdgeId, Vec<NodeId>> {
         self.graph.map_new_edge()
     }
@@ -96,10 +129,10 @@ impl<'a> Iterator for VoronoiMinHeap<'a> {
                 cost_ct_to_ne,
                 cost_pt_to_ne: _,
                 centroid_ct_in_ns,
-                centroid_pt_in_ne: _,
+                centroid_pt_in_ne,
                 start_node_id,
                 end_node_id,
-                edge: _,
+                edge,
             } = state;
 
             if let Some((centroid_id, cost)) = self.cost_map.get(&state.end_node_id) {
@@ -114,6 +147,15 @@ impl<'a> Iterator for VoronoiMinHeap<'a> {
             if self.visit(start_node_id, end_node_id) {
                 continue;
             }
+
+            // save centroid with smallest k
+            self.save_map_object_id_to_k(
+                edge.unwrap(),
+                start_node_id,
+                end_node_id,
+                centroid_ct_in_ns,
+                centroid_pt_in_ne,
+            );
 
             for node_id in self.graph.neighbors(end_node_id) {
                 if self.is_visited(node_id, end_node_id) {
@@ -251,7 +293,12 @@ mod tests {
     fn new_voronoi_minheap() {
         let conf = Arc::new(AppConfig::default());
         let mut graph = Graph::new(conf);
-        let voronoi_minheap = VoronoiMinHeap::new(&mut graph, vec![1, 2, 3]);
+        let mut map_object_id_k = HashMap::new();
+        map_object_id_k.insert(1, 3);
+        map_object_id_k.insert(2, 4);
+        map_object_id_k.insert(3, 3);
+        let voronoi_minheap = VoronoiMinHeap::new(&mut graph, vec![1, 2, 3], map_object_id_k);
+
 
         let mut count = 0;
         for state in voronoi_minheap {

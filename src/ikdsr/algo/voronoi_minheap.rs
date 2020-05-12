@@ -11,6 +11,7 @@ pub struct VoronoiMinHeap<'a> {
     visited: HashMap<EdgeId, bool>,
     map_object_id_k: HashMap<ObjectId, K>,
     map_centroid_edge_id: HashMap<EdgeId, (ObjectId, K)>,
+    min_heap_reserve: Vec<TraverseState>,
 }
 
 impl<'a> VoronoiMinHeap<'a> {
@@ -54,6 +55,7 @@ impl<'a> VoronoiMinHeap<'a> {
             visited: HashMap::new(),
             map_object_id_k,
             map_centroid_edge_id: HashMap::new(),
+            min_heap_reserve: Vec::new(),
         }
     }
 
@@ -113,8 +115,28 @@ impl<'a> VoronoiMinHeap<'a> {
         }
     }
 
+    fn reserve_state(&mut self, state: TraverseState) {
+        if state.start_node_id == state.end_node_id {
+            return;
+        }
+
+        if state.centroid_ct_in_ns != state.centroid_pt_in_ne {
+            if state.centroid_pt_in_ne == 0 {
+                self.min_heap_reserve.push(state);
+            } else if self.k_of_object(state.centroid_ct_in_ns) < self.graph.config.max_dim
+                || self.k_of_object(state.centroid_pt_in_ne) < self.graph.config.max_dim
+            {
+                self.min_heap_reserve.push(state);
+            }
+        }
+    }
+
     pub fn map_new_edge(&self) -> HashMap<EdgeId, Vec<NodeId>> {
         self.graph.map_new_edge()
+    }
+
+    fn k_of_object(&self, object_id: ObjectId) -> K {
+        *self.map_object_id_k.get(&object_id).unwrap()
     }
 }
 
@@ -156,6 +178,8 @@ impl<'a> Iterator for VoronoiMinHeap<'a> {
                 centroid_ct_in_ns,
                 centroid_pt_in_ne,
             );
+
+            self.reserve_state(state);
 
             for node_id in self.graph.neighbors(end_node_id) {
                 if self.is_visited(node_id, end_node_id) {
@@ -217,7 +241,7 @@ impl<'a> Iterator for VoronoiMinHeap<'a> {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct TraverseState {
     pub cost_ct_to_ns: f32,            // cost of current traverse to node start
     pub cost_ct_to_ne: f32,            // cost of current traverse to node end
@@ -298,7 +322,6 @@ mod tests {
         map_object_id_k.insert(2, 4);
         map_object_id_k.insert(3, 3);
         let voronoi_minheap = VoronoiMinHeap::new(&mut graph, vec![1, 2, 3], map_object_id_k);
-
 
         let mut count = 0;
         for state in voronoi_minheap {

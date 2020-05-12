@@ -33,6 +33,7 @@ impl Voronoi {
                 centroid_pt_in_ne,
                 start_node_id,
                 end_node_id: _,
+                smallest_k: _,
                 edge,
             } = state;
             let edge = edge.unwrap();

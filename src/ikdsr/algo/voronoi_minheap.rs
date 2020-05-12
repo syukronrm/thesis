@@ -1,7 +1,6 @@
 use crate::prelude::*;
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap};
-use std::sync::Arc;
 
 pub struct VoronoiMinHeap<'a> {
     graph: &'a Graph,
@@ -25,6 +24,7 @@ impl<'a> VoronoiMinHeap<'a> {
         for centroid_id in centroid_ids {
             for node_id in graph.neighbors(centroid_id) {
                 let edge = graph.edge(node_id, centroid_id).unwrap();
+                println!("{}", centroid_id);
                 min_heap.push(TraverseState {
                     cost_ct_to_ns: 0.0,
                     cost_ct_to_ne: edge.len,
@@ -33,6 +33,7 @@ impl<'a> VoronoiMinHeap<'a> {
                     centroid_pt_in_ne: 0,
                     start_node_id: centroid_id,
                     end_node_id: node_id,
+                    smallest_k: *map_object_id_k.get(&centroid_id).unwrap(),
                     edge: SimpleEdge::from_some(Some(edge)),
                 });
 
@@ -138,6 +139,12 @@ impl<'a> VoronoiMinHeap<'a> {
     fn k_of_object(&self, object_id: ObjectId) -> K {
         *self.map_object_id_k.get(&object_id).unwrap()
     }
+
+    fn smallest_k(&self, o1: ObjectId, o2: ObjectId) -> K {
+        let k1 = self.k_of_object(o1);
+        let k2 = self.k_of_object(o2);
+        k1.min(k2)
+    }
 }
 
 impl<'a> Iterator for VoronoiMinHeap<'a> {
@@ -154,6 +161,7 @@ impl<'a> Iterator for VoronoiMinHeap<'a> {
                 centroid_pt_in_ne,
                 start_node_id,
                 end_node_id,
+                smallest_k: _,
                 edge,
             } = state;
 
@@ -211,6 +219,7 @@ impl<'a> Iterator for VoronoiMinHeap<'a> {
                             centroid_pt_in_ne: existing_centroid,
                             start_node_id: end_node_id,
                             end_node_id: node_id,
+                            smallest_k: self.smallest_k(centroid_ct_in_ns, existing_centroid),
                             edge: SimpleEdge::from_some(edge),
                         });
                     }
@@ -225,6 +234,7 @@ impl<'a> Iterator for VoronoiMinHeap<'a> {
                         centroid_pt_in_ne: 0,
                         start_node_id: end_node_id,
                         end_node_id: node_id,
+                        smallest_k: self.k_of_object(centroid_ct_in_ns),
                         edge: SimpleEdge::from_some(edge),
                     });
                 }
@@ -250,6 +260,7 @@ pub struct TraverseState {
     pub centroid_pt_in_ne: CentroidId, // centroid of previous traverse in node end
     pub start_node_id: NodeId,         // node start
     pub end_node_id: NodeId,           // node end
+    pub smallest_k: K,
     pub edge: Option<SimpleEdge>,
 }
 
@@ -312,6 +323,7 @@ impl SimpleEdge {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Arc;
 
     #[test]
     fn new_voronoi_minheap() {

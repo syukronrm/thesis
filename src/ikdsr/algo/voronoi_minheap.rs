@@ -4,9 +4,9 @@ use std::collections::{BinaryHeap, HashMap};
 
 pub struct VoronoiMinHeap<'a> {
     graph: &'a Graph,
-    pub max_dist: f32,
-    pub min_heap: BinaryHeap<TraverseState>,
-    pub cost_map: HashMap<NodeId, (CentroidId, f32)>,
+    max_dist: f32,
+    min_heap: BinaryHeap<TraverseState>,
+    cost_map: HashMap<NodeId, (CentroidId, f32)>,
     visited: HashMap<EdgeId, bool>,
     map_object_id_k: HashMap<ObjectId, K>,
     map_centroid_edge_id: HashMap<EdgeId, (ObjectId, K)>,

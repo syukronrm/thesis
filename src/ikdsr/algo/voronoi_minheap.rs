@@ -2,6 +2,7 @@ use crate::prelude::*;
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap};
 
+// TODO: save k value
 pub struct VoronoiMinHeap<'a> {
     graph: &'a Graph,
     max_dist: f32,
@@ -147,6 +148,9 @@ impl<'a> VoronoiMinHeap<'a> {
     }
 }
 
+// TODO: modify the iterator by considering k value when traversing
+// idea: continue traverse when next edge's k is 0
+//      or equal to k from input
 impl<'a> Iterator for VoronoiMinHeap<'a> {
     type Item = TraverseState;
 

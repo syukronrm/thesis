@@ -10,6 +10,8 @@ pub struct Voronoi {
 }
 
 impl Voronoi {
+    // TODO: graph should be owned or cloned
+    // TODO: add parameter k
     pub fn initial_voronoi(graph: &mut Graph, object_id: ObjectId) -> Self {
         let max_distance = graph.config.max_dist * 2.0;
         let dom_traverse = DomTraverse::dominate_dominated_by_from_id(graph, object_id);
@@ -102,6 +104,14 @@ impl Voronoi {
 
         voronoi.convert_voronoi_to_original_edge(graph.map_new_edge());
         voronoi
+    }
+
+    // TODO: continue computing voronoi
+    pub fn continue_voronoi(&self, k: K) {
+        // pop all state in min_heap_reverse to min_heap where
+        //   it's k is equal to k
+
+        // 
     }
 
     fn add_scope(&mut self, range: Range, edge_id: EdgeId) {

@@ -143,7 +143,7 @@ impl Voronoi {
 }
 
 #[derive(Copy, Clone, Debug)]
-struct Range {
+pub struct Range {
     pub start: f32,
     pub end: f32,
     pub centroid_id: CentroidId,

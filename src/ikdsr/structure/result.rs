@@ -17,6 +17,11 @@ impl Result {
 
         result
     }
+
+    pub fn insert(&mut self, k: K, edge_id: EdgeId, ranges: Vec<Range>) {
+        // TODO: implement using ordered-float
+        // https://docs.rs/ordered-float/1.0.2/ordered_float/
+    }
 }
 
 struct EdgeResult {

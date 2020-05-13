@@ -272,8 +272,12 @@ impl Graph {
         o.id + 100000
     }
 
-    fn as_object_id(node_id: NodeId) -> ObjectId {
-        node_id - 100000
+    pub fn as_object_id(node_id: NodeId) -> ObjectId {
+        if node_id > 100000 {
+            node_id - 100000
+        } else {
+            node_id
+        }
     }
 
     fn object_as_edge_id(object_id: ObjectId) -> EdgeId {

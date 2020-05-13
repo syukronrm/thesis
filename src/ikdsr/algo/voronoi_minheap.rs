@@ -34,7 +34,7 @@ impl<'a> VoronoiMinHeap<'a> {
                     centroid_pt_in_ne: 0,
                     start_node_id: centroid_id,
                     end_node_id: node_id,
-                    smallest_k: *map_object_id_k.get(&centroid_id).unwrap(),
+                    smallest_k: *map_object_id_k.get(&Graph::as_object_id(centroid_id)).unwrap(),
                     edge: SimpleEdge::from_some(Some(edge)),
                 });
 
@@ -100,6 +100,8 @@ impl<'a> VoronoiMinHeap<'a> {
         curr: CentroidId,
         prev: CentroidId,
     ) {
+        let curr = Graph::as_object_id(curr);
+        let prev = Graph::as_object_id(prev);
         if s != e {
             if prev == 0 {
                 let k_curr = self.map_object_id_k.get(&curr).unwrap();
@@ -138,6 +140,7 @@ impl<'a> VoronoiMinHeap<'a> {
     }
 
     fn k_of_object(&self, object_id: ObjectId) -> K {
+        let object_id = Graph::as_object_id(object_id);
         *self.map_object_id_k.get(&object_id).unwrap()
     }
 

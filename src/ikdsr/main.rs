@@ -15,7 +15,7 @@ pub fn main() {
             let mut voronoi: Voronoi;
             for (index, q) in g.iter() {
                 if index == 0 {
-                    voronoi = Voronoi::initial_voronoi(&mut graph, object.id);
+                    voronoi = Voronoi::initial_voronoi(&mut graph, object.id, q.k);
                     // TODO: save to `result`
                 } else {
                 }

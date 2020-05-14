@@ -12,13 +12,13 @@ pub struct Voronoi<'a> {
 impl<'a> Voronoi<'a> {
     // TODO: graph should be owned or cloned
     // TODO: add parameter k
-    pub fn initial_voronoi(graph: &'a mut Graph, object_id: ObjectId) -> Self {
+    pub fn initial_voronoi(graph: &'a mut Graph, object_id: ObjectId, k_start: K) -> Self {
         let max_distance = graph.config.max_dist * 2.0;
         let dom_traverse = DomTraverse::dominate_dominated_by_from_id(graph, object_id);
-        let mut dominated_by_vec = dom_traverse.dominated_by_objects();
+        let mut dominated_by_vec = dom_traverse.dominated_by_objects(k_start);
         dominated_by_vec.push(object_id);
         let centroid_ids = graph.convert_object_ids_to_node(dominated_by_vec);
-        let mut map_objects_k = dom_traverse.map_dominated_by_objects_k();
+        let mut map_objects_k = dom_traverse.map_dominated_by_objects_k(k_start);
         map_objects_k.insert(object_id, graph.config.max_dim);
         let min_heap = VoronoiMinHeap::new(graph, centroid_ids, map_objects_k);
 
@@ -212,14 +212,14 @@ impl DomTraverse {
                 }
 
                 if src_score > dst_score {
-                    let k = dst_score + 1;
+                    let k = src_score;
                     if let Some(a) = dominate.get_mut(&k) {
                         a.push(object.id);
                     } else {
                         dominate.insert(k, vec![object.id]);
                     }
                 } else if src_score < dst_score {
-                    let k = src_score + 1;
+                    let k = dst_score;
                     if let Some(a) = dominated_by.get_mut(&k) {
                         a.push(object.id);
                     } else {
@@ -243,9 +243,11 @@ impl DomTraverse {
         Self::dominate_dominated_by(graph, object)
     }
 
-    fn dominated_by_objects(&self) -> Vec<ObjectId> {
+    fn dominated_by_objects(&self, k_start: K) -> Vec<ObjectId> {
         let mut object_ids = Vec::new();
-        for (_, vec_obj_id) in &self.dominated_by {
+        for (k, vec_obj_id) in &self.dominated_by {
+            if *k < k_start { continue; }
+
             for obj_id in vec_obj_id {
                 object_ids.push(*obj_id);
             }
@@ -253,9 +255,11 @@ impl DomTraverse {
         object_ids
     }
 
-    fn map_dominated_by_objects_k(&self) -> HashMap<ObjectId, K> {
+    fn map_dominated_by_objects_k(&self, k_start: K) -> HashMap<ObjectId, K> {
         let mut map_objects_k = HashMap::new();
         for (k, vec_object_id) in &self.dominated_by {
+            if *k < k_start { continue; }
+
             for obj_id in vec_object_id {
                 map_objects_k.insert(*obj_id, *k);
             }
@@ -276,7 +280,7 @@ mod tests {
         let object_id = 3;
         let result = DomTraverse::dominate_dominated_by_from_id(&mut graph, object_id);
         assert_eq!(result.dominate.get(&3).unwrap().len(), 1);
-        assert_eq!(result.dominated_by.get(&2).unwrap().len(), 1);
+        assert_eq!(result.dominated_by.get(&3).unwrap().len(), 1);
 
         println!("{:#?}", result);
     }
@@ -286,7 +290,7 @@ mod tests {
         let conf = Arc::new(AppConfig::default());
         let mut graph = Graph::new(conf);
         let object_id = 2;
-        let voronoi = Voronoi::initial_voronoi(&mut graph, object_id);
+        let voronoi = Voronoi::initial_voronoi(&mut graph, object_id, 3);
         println!("{:#?}", voronoi.scope);
 
         let tests = [(4, 1), (2, 1), (1, 1), (5, 2), (3, 2)];

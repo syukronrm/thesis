@@ -10,8 +10,9 @@ pub struct VoronoiMinHeap<'a> {
     cost_map: HashMap<NodeId, (CentroidId, f32)>,
     visited: HashMap<EdgeId, bool>,
     map_object_id_k: HashMap<ObjectId, K>,
-    map_centroid_edge_id: HashMap<EdgeId, (ObjectId, K)>,
+    map_centroid_edge_id: HashMap<EdgeId, (CentroidId, K)>,
     min_heap_reserve: Vec<TraverseState>,
+    is_initial: bool,
 }
 
 impl<'a> VoronoiMinHeap<'a> {
@@ -58,6 +59,7 @@ impl<'a> VoronoiMinHeap<'a> {
             map_object_id_k,
             map_centroid_edge_id: HashMap::new(),
             min_heap_reserve: Vec::new(),
+            is_initial: true,
         }
     }
 
@@ -139,6 +141,10 @@ impl<'a> VoronoiMinHeap<'a> {
         self.graph.map_new_edge()
     }
 
+    pub fn set_initialized(&mut self) {
+        self.is_initial = false;
+    }
+
     fn k_of_object(&self, object_id: ObjectId) -> K {
         let object_id = Graph::as_object_id(object_id);
         *self.map_object_id_k.get(&object_id).unwrap()
@@ -209,6 +215,15 @@ impl<'a> Iterator for VoronoiMinHeap<'a> {
                         cost_ct_to_ne
                     }
                 };
+
+                if !self.is_initial {
+                    if let Some(edge) = edge {
+                        if let Some((centroid_id, k)) = self.map_centroid_edge_id.get(&edge.id) {
+                            
+                        }
+                    }
+                }
+
                 let some_cost = self.cost_map.get_mut(&node_id);
                 if let Some(struct_cost) = some_cost {
                     let (existing_centroid, prev_cost) = struct_cost.clone();

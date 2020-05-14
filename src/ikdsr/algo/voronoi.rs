@@ -4,15 +4,15 @@ use crate::prelude::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-#[derive(Clone, Debug)]
-pub struct Voronoi {
+pub struct Voronoi<'a> {
     scope: HashMap<EdgeId, Vec<Range>>,
+    min_heap: VoronoiMinHeap<'a>,
 }
 
-impl Voronoi {
+impl<'a> Voronoi<'a> {
     // TODO: graph should be owned or cloned
     // TODO: add parameter k
-    pub fn initial_voronoi(graph: &mut Graph, object_id: ObjectId) -> Self {
+    pub fn initial_voronoi(graph: &'a mut Graph, object_id: ObjectId) -> Self {
         let max_distance = graph.config.max_dist * 2.0;
         let dom_traverse = DomTraverse::dominate_dominated_by_from_id(graph, object_id);
         let mut dominated_by_vec = dom_traverse.dominated_by_objects();
@@ -20,13 +20,15 @@ impl Voronoi {
         let centroid_ids = graph.convert_object_ids_to_node(dominated_by_vec);
         let mut map_objects_k = dom_traverse.map_dominated_by_objects_k();
         map_objects_k.insert(object_id, graph.config.max_dim);
-        let mut min_heap = VoronoiMinHeap::new(graph, centroid_ids, map_objects_k);
+        let min_heap = VoronoiMinHeap::new(graph, centroid_ids, map_objects_k);
 
         let mut voronoi = Self {
             scope: HashMap::new(),
+            min_heap,
         };
+        let mut scope = HashMap::new();
 
-        for state in min_heap.by_ref() {
+        for state in voronoi.min_heap.by_ref() {
             let State {
                 cost_ct_to_ns,
                 cost_ct_to_ne,
@@ -57,14 +59,14 @@ impl Voronoi {
                         end: start.min(end),
                         centroid_id: centroid_ct_in_ns,
                     };
-                    voronoi.add_scope(range, edge.id);
+                    Self::add_scope_itself(&mut scope, range, edge.id);
                 } else {
                     let range = Range {
                         start: 0.0,
                         end: edge.len,
                         centroid_id: centroid_ct_in_ns,
                     };
-                    voronoi.add_scope(range, edge.id);
+                    Self::add_scope_itself(&mut scope, range, edge.id);
                 }
             } else {
                 let center_dist =
@@ -75,14 +77,14 @@ impl Voronoi {
                         end: center_dist,
                         centroid_id: centroid_ct_in_ns,
                     };
-                    voronoi.add_scope(range, edge.id);
+                    Self::add_scope_itself(&mut scope, range, edge.id);
 
                     let range = Range {
                         start: center_dist,
                         end: edge.len,
                         centroid_id: centroid_pt_in_ne,
                     };
-                    voronoi.add_scope(range, edge.id);
+                    Self::add_scope_itself(&mut scope, range, edge.id);
                 } else {
                     let c = edge.len - center_dist;
                     let range = Range {
@@ -90,19 +92,20 @@ impl Voronoi {
                         end: edge.len,
                         centroid_id: centroid_ct_in_ns,
                     };
-                    voronoi.add_scope(range, edge.id);
+                    Self::add_scope_itself(&mut scope, range, edge.id);
 
                     let range = Range {
                         start: 0.0,
                         end: c,
                         centroid_id: centroid_pt_in_ne,
                     };
-                    voronoi.add_scope(range, edge.id);
+                    Self::add_scope_itself(&mut scope, range, edge.id);
                 }
             }
         }
 
-        voronoi.convert_voronoi_to_original_edge(graph.map_new_edge());
+        voronoi.scope = scope;
+        voronoi.convert_voronoi_to_original_edge();
         voronoi
     }
 
@@ -114,6 +117,7 @@ impl Voronoi {
         // 
     }
 
+    #[allow(dead_code)]
     fn add_scope(&mut self, range: Range, edge_id: EdgeId) {
         if let Some(ranges) = self.scope.get_mut(&edge_id) {
             ranges.push(range);
@@ -122,7 +126,16 @@ impl Voronoi {
         }
     }
 
-    fn convert_voronoi_to_original_edge(&mut self, map_new_edge: HashMap<EdgeId, Vec<EdgeId>>) {
+    fn add_scope_itself(scope: &mut HashMap<EdgeId, Vec<Range>>, range: Range, edge_id: EdgeId) {
+        if let Some(ranges) = scope.get_mut(&edge_id) {
+            ranges.push(range);
+        } else {
+            scope.insert(edge_id, vec![range]);
+        }
+    }
+
+    fn convert_voronoi_to_original_edge(&mut self) {
+        let map_new_edge = self.min_heap.graph.map_new_edge();
         for (edge_id, vec_new_edge_id) in map_new_edge {
             let mut adjusted_scopes: HashMap<CentroidId, Range> = HashMap::new();
             let mut start_range = 0.0;
@@ -273,7 +286,7 @@ mod tests {
         let mut graph = Graph::new(conf);
         let object_id = 2;
         let voronoi = Voronoi::initial_voronoi(&mut graph, object_id);
-        println!("{:#?}", voronoi);
+        println!("{:#?}", voronoi.scope);
 
         let tests = [(4, 1), (2, 1), (1, 1), (5, 2), (3, 2)];
         for (edge_id, range_len) in tests.iter() {

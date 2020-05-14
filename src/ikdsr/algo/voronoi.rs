@@ -136,7 +136,7 @@ impl<'a> Voronoi<'a> {
     }
 
     fn convert_voronoi_to_original_edge(&mut self) {
-        let map_new_edge = self.min_heap.graph.map_new_edge();
+        let map_new_edge = self.min_heap.map_new_edge();
         for (edge_id, vec_new_edge_id) in map_new_edge {
             let mut adjusted_scopes: HashMap<CentroidId, Range> = HashMap::new();
             let mut start_range = 0.0;

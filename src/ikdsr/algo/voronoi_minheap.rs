@@ -4,7 +4,7 @@ use std::collections::{BinaryHeap, HashMap};
 
 // TODO: save k value
 pub struct VoronoiMinHeap<'a> {
-    pub graph: &'a Graph,
+    graph: &'a Graph,
     max_dist: f32,
     min_heap: BinaryHeap<TraverseState>,
     cost_map: HashMap<NodeId, (CentroidId, f32)>,

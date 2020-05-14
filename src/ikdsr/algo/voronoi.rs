@@ -106,6 +106,7 @@ impl<'a> Voronoi<'a> {
 
         voronoi.scope = scope;
         voronoi.convert_voronoi_to_original_edge();
+        voronoi.min_heap.set_initialized();
         voronoi
     }
 

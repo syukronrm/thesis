@@ -2,7 +2,7 @@ use crate::prelude::*;
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap};
 
-// TODO: save k value
+// TODO: DONE save k value
 pub struct VoronoiMinHeap<'a> {
     graph: &'a Graph,
     max_dist: f32,
@@ -13,6 +13,7 @@ pub struct VoronoiMinHeap<'a> {
     map_centroid_edge_id: HashMap<EdgeId, (CentroidId, K)>,
     min_heap_reserve: Vec<TraverseState>,
     is_initial: bool,
+    current_k: K,
 }
 
 impl<'a> VoronoiMinHeap<'a> {
@@ -35,7 +36,9 @@ impl<'a> VoronoiMinHeap<'a> {
                     centroid_pt_in_ne: 0,
                     start_node_id: centroid_id,
                     end_node_id: node_id,
-                    smallest_k: *map_object_id_k.get(&Graph::as_object_id(centroid_id)).unwrap(),
+                    smallest_k: *map_object_id_k
+                        .get(&Graph::as_object_id(centroid_id))
+                        .unwrap(),
                     edge: SimpleEdge::from_some(Some(edge)),
                 });
 
@@ -60,6 +63,7 @@ impl<'a> VoronoiMinHeap<'a> {
             map_centroid_edge_id: HashMap::new(),
             min_heap_reserve: Vec::new(),
             is_initial: true,
+            current_k: 0,
         }
     }
 
@@ -145,6 +149,10 @@ impl<'a> VoronoiMinHeap<'a> {
         self.is_initial = false;
     }
 
+    pub fn set_k(&mut self, k: K) {
+        self.current_k = k;
+    }
+
     fn k_of_object(&self, object_id: ObjectId) -> K {
         let object_id = Graph::as_object_id(object_id);
         *self.map_object_id_k.get(&object_id).unwrap()
@@ -218,8 +226,10 @@ impl<'a> Iterator for VoronoiMinHeap<'a> {
 
                 if !self.is_initial {
                     if let Some(edge) = edge {
-                        if let Some((centroid_id, k)) = self.map_centroid_edge_id.get(&edge.id) {
-                            
+                        if let Some((_centroid_id, k)) = self.map_centroid_edge_id.get(&edge.id) {
+                            if *k < self.current_k {
+                                continue;
+                            }
                         }
                     }
                 }

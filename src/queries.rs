@@ -73,6 +73,14 @@ impl Group {
     pub fn iter(&self) -> GroupIterator {
         GroupIterator::new(&self.queries)
     }
+
+    pub fn pop_first(&mut self) -> Option<Arc<Query>> {
+        if self.queries.len() != 0 {
+            Some(self.queries.remove(0))
+        } else {
+            None
+        }
+    }
 }
 
 pub struct GroupIterator<'a> {
@@ -87,12 +95,12 @@ impl<'a> GroupIterator<'a> {
 }
 
 impl<'a> Iterator for GroupIterator<'a> {
-    type Item = (usize, &'a Arc<Query>);
+    type Item = &'a Arc<Query>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(q) = self.queries.get(self.index) {
             self.index += 1;
-            Some((self.index - 1, q))
+            Some(q)
         } else {
             None
         }

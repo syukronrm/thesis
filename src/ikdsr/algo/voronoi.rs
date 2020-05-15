@@ -10,8 +10,8 @@ pub struct Voronoi<'a> {
 }
 
 impl<'a> Voronoi<'a> {
-    // TODO: graph should be owned or cloned
-    // TODO: add parameter k
+    // TODO: DONE graph should be owned or cloned
+    // TODO: DONE add parameter k
     pub fn initial_voronoi(graph: &'a mut Graph, object_id: ObjectId, k_start: K) -> Self {
         let max_distance = graph.config.max_dist * 2.0;
         let dom_traverse = DomTraverse::dominate_dominated_by_from_id(graph, object_id);
@@ -111,11 +111,12 @@ impl<'a> Voronoi<'a> {
     }
 
     // TODO: continue computing voronoi
-    pub fn continue_voronoi(&self, k: K) {
+    pub fn continue_voronoi(&mut self, k: K) {
+        self.min_heap.set_k(k);
         // pop all state in min_heap_reverse to min_heap where
         //   it's k is equal to k
 
-        // 
+        //
     }
 
     #[allow(dead_code)]
@@ -246,7 +247,9 @@ impl DomTraverse {
     fn dominated_by_objects(&self, k_start: K) -> Vec<ObjectId> {
         let mut object_ids = Vec::new();
         for (k, vec_obj_id) in &self.dominated_by {
-            if *k < k_start { continue; }
+            if *k < k_start {
+                continue;
+            }
 
             for obj_id in vec_obj_id {
                 object_ids.push(*obj_id);
@@ -258,7 +261,9 @@ impl DomTraverse {
     fn map_dominated_by_objects_k(&self, k_start: K) -> HashMap<ObjectId, K> {
         let mut map_objects_k = HashMap::new();
         for (k, vec_object_id) in &self.dominated_by {
-            if *k < k_start { continue; }
+            if *k < k_start {
+                continue;
+            }
 
             for obj_id in vec_object_id {
                 map_objects_k.insert(*obj_id, *k);

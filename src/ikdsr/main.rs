@@ -8,17 +8,20 @@ pub fn main() {
     let mut graph = Graph::new(conf.clone());
     let queries = Queries::new(reader.read_query_csv());
 
-    let mut result = Result::from_edge_ids(graph.all_edge_ids());
+    let _result = Result::from_edge_ids(graph.all_edge_ids());
 
     for object in graph.all_objects() {
         for g in queries.iter() {
+            let mut g = g.clone();
             let mut voronoi: Voronoi;
-            for (index, q) in g.iter() {
-                if index == 0 {
-                    voronoi = Voronoi::initial_voronoi(&mut graph, object.id, q.k);
-                    // TODO: save to `result`
-                } else {
-                }
+            if let Some(q) = g.pop_first() {
+                voronoi = Voronoi::initial_voronoi(&mut graph, object.id, q.k);
+            } else {
+                continue;
+            }
+
+            for q in g.iter() {
+                voronoi.continue_voronoi(q.k);
             }
         }
     }

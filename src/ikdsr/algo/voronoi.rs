@@ -7,6 +7,7 @@ use std::sync::Arc;
 pub struct Voronoi<'a> {
     scope: HashMap<EdgeId, Vec<Range>>,
     min_heap: VoronoiMinHeap<'a>,
+    max_distance: f32,
 }
 
 impl<'a> Voronoi<'a> {
@@ -18,17 +19,26 @@ impl<'a> Voronoi<'a> {
         let mut dominated_by_vec = dom_traverse.dominated_by_objects(k_start);
         dominated_by_vec.push(object_id);
         let centroid_ids = graph.convert_object_ids_to_node(dominated_by_vec);
+        graph.remove_old_mapped_edges();
         let mut map_objects_k = dom_traverse.map_dominated_by_objects_k(k_start);
         map_objects_k.insert(object_id, graph.config.max_dim);
-        let min_heap = VoronoiMinHeap::new(graph, centroid_ids, map_objects_k);
+        let min_heap = VoronoiMinHeap::new(graph, centroid_ids, map_objects_k, k_start);
 
         let mut voronoi = Self {
             scope: HashMap::new(),
             min_heap,
+            max_distance,
         };
-        let mut scope = HashMap::new();
+        voronoi.compute_scope();
+        voronoi.convert_voronoi_scope_to_original_edge();
+        voronoi.min_heap.set_initialized();
+        voronoi
+    }
 
-        for state in voronoi.min_heap.by_ref() {
+    fn compute_scope(&mut self) {
+        let mut scope = HashMap::new();
+        let max_distance = self.max_distance;
+        for state in self.min_heap.by_ref() {
             let State {
                 cost_ct_to_ns,
                 cost_ct_to_ne,
@@ -103,16 +113,13 @@ impl<'a> Voronoi<'a> {
                 }
             }
         }
-
-        voronoi.scope = scope;
-        voronoi.convert_voronoi_to_original_edge();
-        voronoi.min_heap.set_initialized();
-        voronoi
+        self.scope = scope;
     }
 
     // TODO: continue computing voronoi
     pub fn continue_voronoi(&mut self, k: K) {
         self.min_heap.set_k(k);
+        self.min_heap.pop_min_heap_reverse();
         // pop all state in min_heap_reverse to min_heap where
         //   it's k is equal to k
 
@@ -136,7 +143,7 @@ impl<'a> Voronoi<'a> {
         }
     }
 
-    fn convert_voronoi_to_original_edge(&mut self) {
+    fn convert_voronoi_scope_to_original_edge(&mut self) {
         let map_new_edge = self.min_heap.map_new_edge();
         for (edge_id, vec_new_edge_id) in map_new_edge {
             let mut adjusted_scopes: HashMap<CentroidId, Range> = HashMap::new();
@@ -295,7 +302,7 @@ mod tests {
         let conf = Arc::new(AppConfig::default());
         let mut graph = Graph::new(conf);
         let object_id = 2;
-        let voronoi = Voronoi::initial_voronoi(&mut graph, object_id, 3);
+        let mut voronoi = Voronoi::initial_voronoi(&mut graph, object_id, 3);
         println!("{:#?}", voronoi.scope);
 
         let tests = [(4, 1), (2, 1), (1, 1), (5, 2), (3, 2)];
@@ -308,5 +315,8 @@ mod tests {
             }
             assert!(is_exist);
         }
+
+        voronoi.continue_voronoi(4);
+        println!("");
     }
 }

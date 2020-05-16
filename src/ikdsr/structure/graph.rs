@@ -154,6 +154,14 @@ impl Graph {
         (new_edge_ids, new_node_ids)
     }
 
+    pub fn remove_old_mapped_edges(&mut self) {
+        for (edge_id, _) in &self.map_new_edge {
+            let edge = self.map_edges.get(edge_id).unwrap().clone();
+            self.inner.remove_edge(edge.ni, edge.nj);
+            self.map_edges.remove(&edge.id);
+        }
+    }
+
     fn create_node_from_object(
         &self,
         node_id: NodeId,

@@ -48,10 +48,10 @@ impl<'a> BfsMinHeap<'a> {
         }
     }
 
-    fn from_object(graph: &'a mut Graph, object: Arc<DataObject>) -> Self {
-        let new_node_id = graph.convert_object_as_node(object);
-        BfsMinHeap::new(graph, new_node_id)
-    }
+    // fn from_object(graph: &'a mut Graph, object: Arc<DataObject>) -> Self {
+    //     let new_node_id = graph.convert_object_as_node(object);
+    //     BfsMinHeap::new(graph, new_node_id)
+    // }
 }
 
 impl<'a> Iterator for BfsMinHeap<'a> {

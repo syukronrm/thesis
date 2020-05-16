@@ -21,6 +21,7 @@ impl<'a> VoronoiMinHeap<'a> {
         graph: &'a mut Graph,
         centroid_ids: Vec<CentroidId>,
         map_object_id_k: HashMap<ObjectId, K>,
+        start_k: K,
     ) -> Self {
         let mut min_heap = BinaryHeap::new();
         let mut cost_map = HashMap::new();
@@ -63,8 +64,28 @@ impl<'a> VoronoiMinHeap<'a> {
             map_centroid_edge_id: HashMap::new(),
             min_heap_reserve: Vec::new(),
             is_initial: true,
-            current_k: 0,
+            current_k: start_k,
         }
+    }
+
+    /// Pop min_heap_reverse to min_heap
+    #[allow(dead_code)]
+    pub fn pop_min_heap_reverse(&mut self) {
+        let mut min_heap: BinaryHeap<TraverseState> = BinaryHeap::new();
+        let min_heap_reverse: Vec<TraverseState> = self
+            .min_heap_reserve
+            .iter()
+            .filter(|t| {
+                if t.smallest_k <= self.current_k {
+                    min_heap.push(**t);
+                }
+                self.current_k > t.smallest_k
+            })
+            .map(|t| *t)
+            .collect();
+
+        self.min_heap_reserve = min_heap_reverse;
+        self.min_heap = min_heap;
     }
 
     // pub fn from_objects(graph: &'a mut Graph, centroids: Vec<Arc<DataObject>>) -> Self {
@@ -130,7 +151,7 @@ impl<'a> VoronoiMinHeap<'a> {
             return;
         }
 
-        if state.centroid_ct_in_ns != state.centroid_pt_in_ne {
+        if state.centroid_ct_in_ns != state.centroid_pt_in_ne && state.smallest_k > self.current_k {
             if state.centroid_pt_in_ne == 0 {
                 self.min_heap_reserve.push(state);
             } else if self.k_of_object(state.centroid_ct_in_ns) < self.graph.config.max_dim
@@ -365,7 +386,7 @@ mod tests {
         map_object_id_k.insert(1, 3);
         map_object_id_k.insert(2, 4);
         map_object_id_k.insert(3, 3);
-        let voronoi_minheap = VoronoiMinHeap::new(&mut graph, vec![1, 2, 3], map_object_id_k);
+        let voronoi_minheap = VoronoiMinHeap::new(&mut graph, vec![1, 2, 3], map_object_id_k, 3);
 
         let mut count = 0;
         for state in voronoi_minheap {

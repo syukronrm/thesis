@@ -173,6 +173,13 @@ impl<'a> Voronoi<'a> {
             self.scope.insert(edge_id, ranges);
         }
     }
+
+    // TODO: call to save
+    pub fn save_to_result(&self, result: &mut ResultVoronoi) {
+        for (edge_id, ranges) in &self.scope {
+            result.insert(self.min_heap.current_k, *edge_id, ranges.clone());
+        }
+    }
 }
 
 #[derive(Copy, Clone, Debug)]

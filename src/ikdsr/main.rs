@@ -8,7 +8,7 @@ pub fn main() {
     let mut graph = Graph::new(conf.clone());
     let queries = Queries::new(reader.read_query_csv());
 
-    let _result = Result::from_edge_ids(graph.all_edge_ids());
+    let result = ResultVoronoi::from_edge_ids(graph.all_edge_ids());
 
     for object in graph.all_objects() {
         for g in queries.iter() {

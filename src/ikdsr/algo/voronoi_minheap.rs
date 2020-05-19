@@ -13,7 +13,7 @@ pub struct VoronoiMinHeap<'a> {
     map_centroid_edge_id: HashMap<EdgeId, (CentroidId, K)>,
     min_heap_reserve: Vec<TraverseState>,
     is_initial: bool,
-    current_k: K,
+    pub current_k: K,
 }
 
 impl<'a> VoronoiMinHeap<'a> {
@@ -235,7 +235,7 @@ pub enum Position {
     End,
 }
 
-// TODO: modify the iterator by considering k value when traversing
+// TODO: DONE modify the iterator by considering k value when traversing
 // idea: continue traverse when next edge's k is 0
 //      or equal to k from input
 impl<'a> Iterator for VoronoiMinHeap<'a> {

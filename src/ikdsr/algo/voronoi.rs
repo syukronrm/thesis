@@ -113,17 +113,19 @@ impl<'a> Voronoi<'a> {
                 }
             }
         }
-        self.scope = scope;
+
+        for (edge_id, ranges) in scope {
+            self.scope.insert(edge_id, ranges);
+        }
     }
 
-    // TODO: continue computing voronoi
+    // TODO: DONE continue computing voronoi
     pub fn continue_voronoi(&mut self, k: K) {
         self.min_heap.set_k(k);
-        self.min_heap.pop_min_heap_reverse();
-        // pop all state in min_heap_reverse to min_heap where
-        //   it's k is equal to k
-
-        //
+        self.min_heap.clear_visited();
+        self.min_heap.pop_min_heap_reserve();
+        self.compute_scope();
+        self.convert_voronoi_scope_to_original_edge();
     }
 
     #[allow(dead_code)]
@@ -165,7 +167,6 @@ impl<'a> Voronoi<'a> {
                         adjusted_scopes.insert(scope.centroid_id, new_scope);
                     }
                 }
-                self.scope.remove(&new_edge_id);
             }
             let ranges: Vec<Range> = adjusted_scopes.values().map(|v| v.clone()).collect();
             self.scope.remove(&edge_id);
@@ -317,6 +318,7 @@ mod tests {
         }
 
         voronoi.continue_voronoi(4);
+        println!("{:#?}", voronoi.scope);
         println!("");
     }
 }

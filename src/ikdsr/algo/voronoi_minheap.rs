@@ -29,6 +29,9 @@ impl<'a> VoronoiMinHeap<'a> {
             for node_id in graph.neighbors(centroid_id) {
                 let edge = graph.edge(node_id, centroid_id).unwrap();
                 println!("{}", centroid_id);
+                let smallest_k = *map_object_id_k
+                    .get(&Graph::as_object_id(centroid_id))
+                    .unwrap();
                 min_heap.push(TraverseState {
                     cost_ct_to_ns: 0.0,
                     cost_ct_to_ne: edge.len,
@@ -37,9 +40,7 @@ impl<'a> VoronoiMinHeap<'a> {
                     centroid_pt_in_ne: 0,
                     start_node_id: centroid_id,
                     end_node_id: node_id,
-                    smallest_k: *map_object_id_k
-                        .get(&Graph::as_object_id(centroid_id))
-                        .unwrap(),
+                    smallest_k: (smallest_k, Position::Start),
                     edge: SimpleEdge::from_some(Some(edge)),
                 });
 
@@ -70,22 +71,51 @@ impl<'a> VoronoiMinHeap<'a> {
 
     /// Pop min_heap_reverse to min_heap
     #[allow(dead_code)]
-    pub fn pop_min_heap_reverse(&mut self) {
+    pub fn pop_min_heap_reserve(&mut self) {
         let mut min_heap: BinaryHeap<TraverseState> = BinaryHeap::new();
-        let min_heap_reverse: Vec<TraverseState> = self
+        let min_heap_reserve: Vec<TraverseState> = self
             .min_heap_reserve
             .iter()
             .filter(|t| {
-                if t.smallest_k <= self.current_k {
+                if t.smallest_k.0 <= self.current_k {
                     min_heap.push(**t);
                 }
-                self.current_k > t.smallest_k
+
+                self.current_k > t.smallest_k.0
             })
             .map(|t| *t)
             .collect();
 
-        self.min_heap_reserve = min_heap_reverse;
-        self.min_heap = min_heap;
+        self.min_heap_reserve = min_heap_reserve;
+        self.min_heap = min_heap
+            .iter()
+            .map(|t| {
+                let mut t = *t;
+                match t.smallest_k.1 {
+                    Position::Start => {
+                        self.remove_cost(t.end_node_id);
+                        t.centroid_pt_in_ne = t.centroid_ct_in_ns;
+                        t.cost_pt_to_ne = t.cost_ct_to_ne;
+
+                        t
+                    }
+                    Position::End => {
+                        self.remove_cost(t.start_node_id);
+                        TraverseState {
+                            cost_ct_to_ns: t.cost_pt_to_ne,
+                            cost_ct_to_ne: t.cost_pt_to_ne,
+                            cost_pt_to_ne: t.cost_pt_to_ne + t.edge.unwrap().len,
+                            centroid_ct_in_ns: t.centroid_pt_in_ne,
+                            centroid_pt_in_ne: t.centroid_pt_in_ne,
+                            start_node_id: t.end_node_id,
+                            end_node_id: t.start_node_id,
+                            smallest_k: t.smallest_k,
+                            edge: t.edge,
+                        }
+                    }
+                }
+            })
+            .collect();
     }
 
     // pub fn from_objects(graph: &'a mut Graph, centroids: Vec<Arc<DataObject>>) -> Self {
@@ -151,7 +181,8 @@ impl<'a> VoronoiMinHeap<'a> {
             return;
         }
 
-        if state.centroid_ct_in_ns != state.centroid_pt_in_ne && state.smallest_k > self.current_k {
+        if state.centroid_ct_in_ns != state.centroid_pt_in_ne && state.smallest_k.0 > self.current_k
+        {
             if state.centroid_pt_in_ne == 0 {
                 self.min_heap_reserve.push(state);
             } else if self.k_of_object(state.centroid_ct_in_ns) < self.graph.config.max_dim
@@ -174,16 +205,34 @@ impl<'a> VoronoiMinHeap<'a> {
         self.current_k = k;
     }
 
+    pub fn clear_visited(&mut self) {
+        self.visited = HashMap::new();
+    }
+
     fn k_of_object(&self, object_id: ObjectId) -> K {
         let object_id = Graph::as_object_id(object_id);
         *self.map_object_id_k.get(&object_id).unwrap()
     }
 
-    fn smallest_k(&self, o1: ObjectId, o2: ObjectId) -> K {
-        let k1 = self.k_of_object(o1);
-        let k2 = self.k_of_object(o2);
-        k1.min(k2)
+    fn smallest_k(&self, start: ObjectId, end: ObjectId) -> (K, Position) {
+        let start_k = self.k_of_object(start);
+        let end_k = self.k_of_object(end);
+        if start_k < end_k {
+            (start_k, Position::Start)
+        } else {
+            (end_k, Position::End)
+        }
     }
+
+    pub fn remove_cost(&mut self, node_id: NodeId) {
+        self.cost_map.remove(&node_id);
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+pub enum Position {
+    Start,
+    End,
 }
 
 // TODO: modify the iterator by considering k value when traversing
@@ -248,11 +297,12 @@ impl<'a> Iterator for VoronoiMinHeap<'a> {
                 if !self.is_initial {
                     if let Some(edge) = edge {
                         if let Some((_centroid_id, k)) = self.map_centroid_edge_id.get(&edge.id) {
-                            if *k < self.current_k {
+                            if *k > self.current_k {
                                 continue;
                             }
                         }
                     }
+                    self.cost_map.remove(&node_id);
                 }
 
                 let some_cost = self.cost_map.get_mut(&node_id);
@@ -279,6 +329,7 @@ impl<'a> Iterator for VoronoiMinHeap<'a> {
                 } else {
                     self.cost_map
                         .insert(node_id, (centroid_ct_in_ns, cost_next));
+                    let smallest_k = self.k_of_object(centroid_ct_in_ns);
                     self.min_heap.push(TraverseState {
                         cost_ct_to_ns: cost_ct_to_ne,
                         cost_ct_to_ne: cost_next,
@@ -287,7 +338,7 @@ impl<'a> Iterator for VoronoiMinHeap<'a> {
                         centroid_pt_in_ne: 0,
                         start_node_id: end_node_id,
                         end_node_id: node_id,
-                        smallest_k: self.k_of_object(centroid_ct_in_ns),
+                        smallest_k: (smallest_k, Position::Start),
                         edge: SimpleEdge::from_some(edge),
                     });
                 }
@@ -313,7 +364,7 @@ pub struct TraverseState {
     pub centroid_pt_in_ne: CentroidId, // centroid of previous traverse in node end
     pub start_node_id: NodeId,         // node start
     pub end_node_id: NodeId,           // node end
-    pub smallest_k: K,
+    pub smallest_k: (K, Position),
     pub edge: Option<SimpleEdge>,
 }
 

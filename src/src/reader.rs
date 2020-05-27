@@ -212,6 +212,6 @@ mod tests {
         let q2 = queries.get(1).unwrap();
 
         assert_eq!(q1.k, 3);
-        assert_eq!(q2.k, 5);
+        assert_eq!(q2.k, 4);
     }
 }

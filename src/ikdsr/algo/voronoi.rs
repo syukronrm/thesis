@@ -19,7 +19,6 @@ impl<'a> Voronoi<'a> {
         let mut dominated_by_vec = dom_traverse.dominated_by_objects(k_start);
         dominated_by_vec.push(object_id);
         let centroid_ids = graph.convert_object_ids_to_node(dominated_by_vec);
-        graph.remove_old_mapped_edges();
         let mut map_objects_k = dom_traverse.map_dominated_by_objects_k(k_start);
         map_objects_k.insert(object_id, graph.config.max_dim);
         let min_heap = VoronoiMinHeap::new(graph, centroid_ids, map_objects_k, k_start);
@@ -151,7 +150,11 @@ impl<'a> Voronoi<'a> {
             let mut adjusted_scopes: HashMap<CentroidId, Range> = HashMap::new();
             let mut start_range = 0.0;
             for new_edge_id in vec_new_edge_id {
-                let mut scopes = self.scope.get(&new_edge_id).unwrap().clone();
+                let scopes = self.scope.get(&new_edge_id);
+                if scopes.is_none() {
+                    break;
+                }
+                let mut scopes = scopes.unwrap().clone();
                 scopes.sort_by(|a, b| a.start.partial_cmp(&b.start).unwrap());
                 for scope in scopes {
                     if let Some(s) = adjusted_scopes.get_mut(&scope.centroid_id) {
@@ -177,7 +180,9 @@ impl<'a> Voronoi<'a> {
     // TODO: call to save
     pub fn save_to_result(&self, result: &mut ResultVoronoi) {
         for (edge_id, ranges) in &self.scope {
-            // result.insert(self.min_heap.current_k, *edge_id, ranges.clone());
+            if self.min_heap.is_original_edge(*edge_id) {
+                result.insert(self.min_heap.current_k, *edge_id, ranges.clone());
+            }
         }
     }
 }

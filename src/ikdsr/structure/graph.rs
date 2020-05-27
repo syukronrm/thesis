@@ -259,6 +259,10 @@ impl Graph {
         self.map_edges.get(&e).unwrap().clone()
     }
 
+    pub fn map_edges(&self) -> HashMap<EdgeId, Arc<DataEdge>> {
+        self.map_edges.clone()
+    }
+
     pub fn objects(&self, a: NodeId, b: NodeId) -> Vec<Arc<DataObject>> {
         let edge_weight = self.inner.edge_weight(a, b).unwrap();
         edge_weight.objects.clone()

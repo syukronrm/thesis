@@ -2,7 +2,6 @@ use crate::prelude::*;
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap};
 use std::fmt;
-use std::sync::Arc;
 
 /// Traverse a graph with BFS feat `min_heap`.
 #[derive(Clone)]

@@ -4,25 +4,35 @@ use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 
 pub struct ResultVoronoi {
-    inner: HashMap<EdgeId, EdgeResult>,
+    inner: HashMap<EdgeId, HashMap<K, EdgeResult>>,
+    edges: HashMap<EdgeId, Arc<DataEdge>>,
 }
 
 impl ResultVoronoi {
-    pub fn from_edge_ids(edge_ids: Vec<Arc<DataEdge>>) -> Self {
+    pub fn from_edge_ids(edges: HashMap<EdgeId, Arc<DataEdge>>) -> Self {
         let mut result = ResultVoronoi {
             inner: HashMap::new(),
+            edges,
         };
-
-        for e in edge_ids {
-            result.inner.insert(e.id, EdgeResult::default());
-        }
 
         result
     }
 
-    // pub fn insert(&mut self, edge_id: EdgeId, ranges: Vec<Range>) {
-    //     let mut edge_result = EdgeResult::new();
-    // }
+    pub fn insert(&mut self, k: K, edge_id: EdgeId, ranges: Vec<Range>) {
+        let edge = self.edges.get(&edge_id).unwrap();
+        let mut edge_result = EdgeResult::new(edge.len);
+        for r in ranges {
+            edge_result.insert(r);
+        }
+
+        if let Some(k_edge_result) = self.inner.get_mut(&edge_id) {
+            k_edge_result.insert(k, edge_result);
+        } else {
+            let mut hash = HashMap::new();
+            hash.insert(k, edge_result);
+            self.inner.insert(edge_id, hash);
+        }
+    }
 }
 
 struct EdgeResult {
@@ -72,6 +82,8 @@ impl EdgeResult {
                     inner_clone.insert(end, object_ids);
                     break;
                 }
+            } else {
+                break;
             }
         }
 

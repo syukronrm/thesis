@@ -125,7 +125,7 @@ mod tests {
         let mut is_exists = false;
         for q in queries.iter() {
             if q.dimensions == vec![1, 2, 3, 4] {
-                assert_eq!(q.queries.len(), 2);
+                assert_eq!(q.queries.len(), 1);
                 is_exists = true;
             }
         }

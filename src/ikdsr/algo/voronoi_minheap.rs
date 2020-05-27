@@ -209,6 +209,14 @@ impl<'a> VoronoiMinHeap<'a> {
         self.visited = HashMap::new();
     }
 
+    pub fn is_original_edge(&self, edge_id: EdgeId) -> bool {
+        if let Some(_) = self.graph.map_new_edge().get(&edge_id) {
+            true
+        } else {
+            false
+        }
+    }
+
     fn k_of_object(&self, object_id: ObjectId) -> K {
         let object_id = Graph::as_object_id(object_id);
         *self.map_object_id_k.get(&object_id).unwrap()

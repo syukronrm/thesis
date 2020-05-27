@@ -57,14 +57,16 @@ def get_nodes(file_nodes):
 
 def save_nodes(nodes, path):
   with open(path, "w") as file:
+    file.writelines("id lng lat\n")
     for node in nodes:
-      line = str(node.id) + ' ' + str(node.lng) + ' ' + str(node.lat) + '\n'
+      line = str(int(node.id) + 1) + ' ' + str(node.lng) + ' ' + str(node.lat) + '\n'
       file.writelines(line)
 
 def save_edges(edges, path):
   with open(path, "w") as file:
+    file.writelines("id node_i node_j\n")
     for edge in edges:
-      line = str(edge.id) + ' ' + str(edge.n1) + ' ' + str(edge.n2) + '\n'
+      line = str(int(edge.id) + 1) + ' ' + str(int(edge.n1) + 1) + ' ' + str(int(edge.n2) + 1) + '\n'
       file.writelines(line)
 
 def get_edges(file_edges):
@@ -91,9 +93,9 @@ if __name__ == '__main__':
   nodes = get_nodes(file_nodes)
   nodes = normalize_nodes(nodes)
   normalized_dir = path.join(dataset_dir, 'normalized')
-  save_nodes(nodes, path.join(normalized_dir, 'cal.cnode.txt'))
+  save_nodes(nodes, path.join(normalized_dir, 'node.txt'))
 
   edges = get_edges(file_edges)
-  save_edges(edges, path.join(normalized_dir, 'cal.cedge.txt'))
+  save_edges(edges, path.join(normalized_dir, 'edge.txt'))
 
   print('Done.')

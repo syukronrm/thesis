@@ -26,6 +26,15 @@ impl Default for AppConfig {
     }
 }
 
+impl AppConfig {
+    pub fn path(&mut self, rel_path: String) {
+        let project_path = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let dataset_dir = project_path.join(rel_path);
+        self.dataset_dir = dataset_dir.to_path_buf();
+        self.paths = Paths::new(dataset_dir);
+    }
+}
+
 /// Paths for all files for dataset
 #[derive(Clone, Debug)]
 pub struct Paths {

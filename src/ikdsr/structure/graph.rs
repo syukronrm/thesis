@@ -32,9 +32,7 @@ impl Graph {
     }
 
     fn initial_network(&mut self) {
-        let conf: AppConfig = Default::default();
-        let conf = Arc::new(conf);
-        let reader = Reader::new(conf);
+        let reader = Reader::new(self.config.clone());
 
         let arc_nodes = reader.read_node_csv();
         self.map_nodes = arc_nodes.iter().map(|a| (a.id, a.clone())).collect();

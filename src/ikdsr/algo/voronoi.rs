@@ -191,7 +191,7 @@ impl<'a> Voronoi<'a> {
         }
     }
 
-    // TODO: call to save
+    // TODO: DONE call to save
     pub fn save_to_result(&self, result: &mut ResultVoronoi) {
         for (edge_id, ranges) in &self.scope {
             if self.min_heap.is_original_edge(*edge_id) {

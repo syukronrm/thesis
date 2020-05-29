@@ -8,6 +8,7 @@ pub struct Voronoi<'a> {
     scope: HashMap<EdgeId, Vec<Range>>,
     min_heap: VoronoiMinHeap<'a>,
     max_distance: f32,
+    start_centroid_id: CentroidId,
 }
 
 impl<'a> Voronoi<'a> {
@@ -27,6 +28,7 @@ impl<'a> Voronoi<'a> {
             scope: HashMap::new(),
             min_heap,
             max_distance,
+            start_centroid_id: Graph::as_centroid_id(object_id),
         };
         voronoi.compute_scope();
         voronoi.convert_voronoi_scope_to_original_edge();
@@ -51,6 +53,10 @@ impl<'a> Voronoi<'a> {
             } = state;
             let edge = edge.unwrap();
             if centroid_pt_in_ne == 0 || centroid_ct_in_ns == centroid_pt_in_ne {
+                if centroid_ct_in_ns != self.start_centroid_id {
+                    continue;
+                }
+
                 if cost_ct_to_ne > max_distance {
                     let start = if edge.ni == start_node_id {
                         0.0
@@ -81,34 +87,42 @@ impl<'a> Voronoi<'a> {
                 let center_dist =
                     ((cost_ct_to_ns + cost_pt_to_ne + edge.len) / 2.0) - cost_ct_to_ns;
                 if edge.ni == start_node_id {
-                    let range = Range {
-                        start: 0.0,
-                        end: center_dist,
-                        centroid_id: centroid_ct_in_ns,
-                    };
-                    Self::add_scope_itself(&mut scope, range, edge.id);
+                    if centroid_ct_in_ns == self.start_centroid_id {
+                        let range = Range {
+                            start: 0.0,
+                            end: center_dist,
+                            centroid_id: centroid_ct_in_ns,
+                        };
+                        Self::add_scope_itself(&mut scope, range, edge.id);
+                    }
 
-                    let range = Range {
-                        start: center_dist,
-                        end: edge.len,
-                        centroid_id: centroid_pt_in_ne,
-                    };
-                    Self::add_scope_itself(&mut scope, range, edge.id);
+                    if centroid_pt_in_ne == self.start_centroid_id {
+                        let range = Range {
+                            start: center_dist,
+                            end: edge.len,
+                            centroid_id: centroid_pt_in_ne,
+                        };
+                        Self::add_scope_itself(&mut scope, range, edge.id);
+                    }
                 } else {
                     let c = edge.len - center_dist;
-                    let range = Range {
-                        start: c,
-                        end: edge.len,
-                        centroid_id: centroid_ct_in_ns,
-                    };
-                    Self::add_scope_itself(&mut scope, range, edge.id);
+                    if centroid_ct_in_ns == self.start_centroid_id {
+                        let range = Range {
+                            start: c,
+                            end: edge.len,
+                            centroid_id: centroid_ct_in_ns,
+                        };
+                        Self::add_scope_itself(&mut scope, range, edge.id);
+                    }
 
-                    let range = Range {
-                        start: 0.0,
-                        end: c,
-                        centroid_id: centroid_pt_in_ne,
-                    };
-                    Self::add_scope_itself(&mut scope, range, edge.id);
+                    if centroid_pt_in_ne == self.start_centroid_id {
+                        let range = Range {
+                            start: 0.0,
+                            end: c,
+                            centroid_id: centroid_pt_in_ne,
+                        };
+                        Self::add_scope_itself(&mut scope, range, edge.id);
+                    }
                 }
             }
         }
@@ -318,7 +332,7 @@ mod tests {
         let mut voronoi = Voronoi::initial_voronoi(&mut graph, object_id, 3);
         println!("{:#?}", voronoi.scope);
 
-        let tests = [(4, 1), (2, 1), (1, 1), (5, 2), (3, 2)];
+        let tests = [(200002, 1), (300002, 1)];
         for (edge_id, range_len) in tests.iter() {
             let mut is_exist = false;
             for (e, ranges) in &voronoi.scope {

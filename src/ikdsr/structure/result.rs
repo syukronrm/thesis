@@ -18,24 +18,32 @@ impl ResultVoronoi {
         result
     }
 
-    /// insert/replace voronoi scope in `edge_id`
+    /// insert voronoi scope in `edge_id`
     pub fn insert(&mut self, k: K, edge_id: EdgeId, ranges: Vec<Range>) {
         let edge = self.edges.get(&edge_id).unwrap();
-        let mut edge_result = EdgeResult::new(edge.len);
-        for r in ranges {
-            edge_result.insert(r);
-        }
 
         if let Some(k_edge_result) = self.inner.get_mut(&edge_id) {
-            k_edge_result.insert(k, edge_result);
+            if let Some(edge_result) = k_edge_result.get_mut(&k) {
+                for r in ranges {
+                    edge_result.insert(r);
+                }
+            } else {
+                let mut edge_result = EdgeResult::new(edge.len);
+                for r in ranges {
+                    edge_result.insert(r);
+                }
+                k_edge_result.insert(k, edge_result);
+            }
         } else {
             let mut hash = HashMap::new();
+            let mut edge_result = EdgeResult::new(edge.len);
+            for r in ranges {
+                edge_result.insert(r);
+            }
             hash.insert(k, edge_result);
             self.inner.insert(edge_id, hash);
         }
     }
-
-    // TODO: insert voronoi scope without replacing the exising scopes
 }
 
 struct EdgeResult {

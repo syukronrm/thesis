@@ -84,6 +84,10 @@ impl Graph {
         }
     }
 
+    pub fn insert_object(&mut self, object: Arc<DataObject>) {
+        self.insert_objects(vec![object]);
+    }
+
     pub fn convert_object_as_node(&mut self, object: Arc<DataObject>) -> NodeId {
         let (_, new_node_ids) = self.convert_objects_as_node_in_edge(object.edge_id, vec![object]);
         *new_node_ids.first().unwrap()

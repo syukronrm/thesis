@@ -31,6 +31,8 @@ pub fn main() {
                 voronoi.save_to_result(&mut result);
             }
         }
+        graph.clean();
+    }
     }
 }
 
@@ -71,6 +73,7 @@ mod tests {
                     voronoi.save_to_result(&mut result);
                 }
             }
+            graph.clean();
         }
     }
 }

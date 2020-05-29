@@ -6,7 +6,7 @@ use crate::prelude::*;
 use std::sync::Arc;
 
 #[allow(dead_code)]
-pub fn main() {
+pub fn construct() {
     let conf = Arc::new(AppConfig::default());
     let reader = Reader::new(conf.clone());
     let mut graph = Graph::new(conf.clone());
@@ -26,14 +26,22 @@ pub fn main() {
             }
 
             for q in g.iter() {
-                println!("cont coronoi");
                 voronoi.continue_voronoi(q.k);
                 voronoi.save_to_result(&mut result);
             }
         }
         graph.clean();
     }
-    }
+}
+
+#[allow(dead_code)]
+pub fn insertion() {
+    let conf = Arc::new(AppConfig::default());
+    let reader = Reader::new(conf.clone());
+    let mut graph = Graph::new_empty_object(conf.clone());
+    let queries = Queries::new(reader.read_query_csv());
+
+    let mut result = ResultVoronoi::from_edge_ids(graph.map_edges());
 }
 
 #[cfg(test)]
@@ -42,7 +50,7 @@ mod tests {
 
     #[test]
     fn main_test() {
-        main();
+        construct();
     }
 
     #[test]

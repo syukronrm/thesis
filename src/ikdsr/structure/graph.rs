@@ -27,11 +27,26 @@ impl Graph {
             map_new_node: HashMap::new(),
             inner: graph,
         };
-        itself.initial_network();
+        itself.initial_network(true);
         itself
     }
 
-    fn initial_network(&mut self) {
+    pub fn new_empty_object(config: Arc<AppConfig>) -> Self {
+        let graph = GraphMap::new();
+        let mut itself = Graph {
+            config,
+            objects: HashMap::new(),
+            map_nodes: HashMap::new(),
+            map_edges: HashMap::new(),
+            map_new_edge: HashMap::new(),
+            map_new_node: HashMap::new(),
+            inner: graph,
+        };
+        itself.initial_network(false);
+        itself
+    }
+
+    fn initial_network(&mut self, with_objects: bool) {
         let reader = Reader::new(self.config.clone());
 
         let arc_nodes = reader.read_node_csv();
@@ -40,8 +55,10 @@ impl Graph {
         let edges = reader.read_edge_csv(&arc_nodes);
         self.insert_edges(edges);
 
-        let objects = reader.read_object_csv();
-        self.insert_objects(objects);
+        if with_objects {
+            let objects = reader.read_object_csv();
+            self.insert_objects(objects);
+        }
     }
 
     fn insert_edges(&mut self, edges: Vec<Arc<DataEdge>>) {
@@ -54,7 +71,7 @@ impl Graph {
             self.map_edges.insert(edge.id, edge);
         }
     }
-    
+
     fn insert_objects(&mut self, objects: Vec<Arc<DataObject>>) {
         for object in objects {
             let edge_data = self.map_edges.get(&object.edge_id).unwrap();
@@ -288,6 +305,10 @@ impl Graph {
 
     fn as_node_id(o: &Arc<DataObject>) -> NodeId {
         o.id + 100000
+    }
+
+    pub fn as_centroid_id(object_id: ObjectId) -> CentroidId {
+        object_id + 100000
     }
 
     pub fn as_object_id(node_id: NodeId) -> ObjectId {

@@ -38,6 +38,13 @@ impl Graph {
         self.map_nodes = arc_nodes.iter().map(|a| (a.id, a.clone())).collect();
 
         let edges = reader.read_edge_csv(&arc_nodes);
+        self.insert_edges(edges);
+
+        let objects = reader.read_object_csv();
+        self.insert_objects(objects);
+    }
+
+    fn insert_edges(&mut self, edges: Vec<Arc<DataEdge>>) {
         for edge in edges {
             self.inner.add_edge(
                 edge.ni,
@@ -46,8 +53,9 @@ impl Graph {
             );
             self.map_edges.insert(edge.id, edge);
         }
-
-        let objects = reader.read_object_csv();
+    }
+    
+    fn insert_objects(&mut self, objects: Vec<Arc<DataObject>>) {
         for object in objects {
             let edge_data = self.map_edges.get(&object.edge_id).unwrap();
             let edge = self

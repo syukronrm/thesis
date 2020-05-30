@@ -81,6 +81,10 @@ impl Group {
             None
         }
     }
+
+    pub fn remove_less_k(&mut self, k: K) {
+        self.queries.retain(|q| q.k >= k);
+    }
 }
 
 pub struct GroupIterator<'a> {
@@ -120,12 +124,12 @@ mod tests {
         let queries = reader.read_query_csv();
 
         let queries = Queries::new(queries);
-        assert_eq!(queries.length(), 2);
+        assert_eq!(queries.length(), 1);
 
         let mut is_exists = false;
         for q in queries.iter() {
             if q.dimensions == vec![1, 2, 3, 4] {
-                assert_eq!(q.queries.len(), 1);
+                assert_eq!(q.queries.len(), 2);
                 is_exists = true;
             }
         }

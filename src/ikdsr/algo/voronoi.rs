@@ -209,7 +209,7 @@ pub struct Range {
 }
 
 #[derive(Debug)]
-struct DomTraverse {
+pub struct DomTraverse {
     originator: Arc<DataObject>,
     pub dominated_by: HashMap<K, Vec<ObjectId>>,
     pub dominate: HashMap<K, Vec<ObjectId>>,
@@ -217,7 +217,7 @@ struct DomTraverse {
 
 impl DomTraverse {
     /// Get objects dominate and dominated by originator.
-    fn dominate_dominated_by(graph: &mut Graph, originator: Arc<DataObject>) -> Self {
+    pub fn dominate_dominated_by(graph: &mut Graph, originator: Arc<DataObject>) -> Self {
         let centroid_id = graph.convert_object_as_node(originator.clone());
         let bfs = BfsMinHeap::new(graph, centroid_id);
 
@@ -290,6 +290,23 @@ impl DomTraverse {
             }
         }
         object_ids
+    }
+
+    pub fn dominated_by_objects_all_k(&self) -> Vec<ObjectId> {
+        let mut object_ids = Vec::new();
+        for (_k, vec_obj_id) in &self.dominated_by {
+            for obj_id in vec_obj_id {
+                object_ids.push(*obj_id);
+            }
+        }
+        object_ids
+    }
+
+    
+    pub fn valid_dominated_by_query(&self, queries: Queries) {
+        for q in queries.iter() {
+            
+        }
     }
 
     fn map_dominated_by_objects_k(&self, k_start: K) -> HashMap<ObjectId, K> {

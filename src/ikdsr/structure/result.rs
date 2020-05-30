@@ -3,6 +3,7 @@ use ordered_float::OrderedFloat as OF;
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 
+#[derive(Debug)]
 pub struct ResultVoronoi {
     inner: HashMap<EdgeId, HashMap<K, EdgeResult>>,
     edges: HashMap<EdgeId, Arc<DataEdge>>,
@@ -10,7 +11,7 @@ pub struct ResultVoronoi {
 
 impl ResultVoronoi {
     pub fn from_edge_ids(edges: HashMap<EdgeId, Arc<DataEdge>>) -> Self {
-        let mut result = ResultVoronoi {
+        let result = ResultVoronoi {
             inner: HashMap::new(),
             edges,
         };
@@ -46,6 +47,7 @@ impl ResultVoronoi {
     }
 }
 
+#[derive(Debug)]
 struct EdgeResult {
     ranges: Vec<Range>,
     edge_len: f32,
@@ -146,6 +148,7 @@ mod tests {
             edge_result.insert(range);
         }
 
+        println!("{:#?}", edge_result);
         assert_eq!(edge_result.inner.len(), 6);
     }
 }

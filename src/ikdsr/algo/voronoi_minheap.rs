@@ -210,10 +210,10 @@ impl<'a> VoronoiMinHeap<'a> {
     }
 
     pub fn is_original_edge(&self, edge_id: EdgeId) -> bool {
-        if let Some(_) = self.graph.map_new_edge().get(&edge_id) {
-            true
-        } else {
+        if edge_id > 100000 {
             false
+        } else {
+            true
         }
     }
 

@@ -46,7 +46,7 @@ pub fn insertion() {
     for object in objects {
         graph.insert_object(object.clone());
         let dom_traverse = DomTraverse::dominate_dominated_by(&mut graph, object.clone());
-        let dominated_by_objects = dom_traverse.map_dominate_objects();
+        let dominate_objects = dom_traverse.map_dominate_objects();
 
         for g in queries.iter() {
             let mut g0 = g.clone();
@@ -64,14 +64,14 @@ pub fn insertion() {
             }
 
             // TODO: compute dominated objects by `object`
-            for (dominated, k) in dominated_by_objects.clone() {
+            for (dominate_object, k) in dominate_objects.clone() {
                 let mut g1 = g.clone();
                 g1.remove_less_k(k);
-                result.remove(dominated, k);
+                result.remove(dominate_object, k);
                 let mut g2 = g1.clone();
                 let mut voronoi: Voronoi;
                 if let Some(q) = g2.pop_first() {
-                    voronoi = Voronoi::initial_voronoi(&mut graph, dominated, q.k);
+                    voronoi = Voronoi::initial_voronoi(&mut graph, dominate_object, q.k);
                     voronoi.save_to_result(&mut result);
                 } else {
                     continue;

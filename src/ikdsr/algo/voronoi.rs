@@ -70,8 +70,8 @@ impl<'a> Voronoi<'a> {
                     };
 
                     let range = Range {
-                        start: start.max(end),
-                        end: start.min(end),
+                        start: start.min(end),
+                        end: start.max(end),
                         centroid_id: centroid_ct_in_ns,
                     };
                     Self::add_scope_itself(&mut scope, range, edge.id);
@@ -318,6 +318,22 @@ impl DomTraverse {
 
             for obj_id in vec_object_id {
                 map_objects_k.insert(*obj_id, *k);
+            }
+        }
+        map_objects_k
+    }
+
+    pub fn map_dominate_objects(&self) -> HashMap<ObjectId, K> {
+        let mut map_objects_k = HashMap::new();
+        for (k, vec_object_id) in &self.dominate {
+            for obj_id in vec_object_id {
+                if let Some(ex_k) = map_objects_k.get_mut(obj_id) {
+                    if *k < *ex_k {
+                        *ex_k = *k;
+                    }
+                } else {
+                    map_objects_k.insert(*obj_id, *k);
+                }
             }
         }
         map_objects_k

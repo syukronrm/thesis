@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use ordered_float::OrderedFloat as OF;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::Arc;
 
 #[derive(Debug)]
@@ -43,6 +43,14 @@ impl ResultVoronoi {
             }
             hash.insert(k, edge_result);
             self.inner.insert(edge_id, hash);
+        }
+    }
+
+    pub fn remove(&mut self, object_id: ObjectId, k: K) {
+        for (_edge_id, k_edge_result) in &mut self.inner {
+            if let Some(edge_result) = k_edge_result.get_mut(&k) {
+                edge_result.remove(object_id);
+            }
         }
     }
 }
@@ -102,6 +110,40 @@ impl EdgeResult {
 
         self.inner = inner_clone;
     }
+
+    fn remove(&mut self, object_id: CentroidId) {
+        self.ranges.retain(|r| r.centroid_id != object_id);
+        let mut deleted_dist = HashSet::new();
+        for (dist, vec_object_id) in &mut self.inner {
+            let mut is_deleted = false;
+            vec_object_id.retain(|o| {
+                if o == &object_id {
+                    is_deleted = true;
+                    false
+                } else {
+                    true
+                }
+            });
+            if is_deleted {
+                deleted_dist.insert(*dist);
+            }
+            vec_object_id.sort();
+        }
+        let inner_clone = self.inner.clone();
+        let mut inner_clone_iter= inner_clone.iter().peekable();
+        loop {
+            let dist = inner_clone_iter.next();
+            let next_dist = inner_clone_iter.peek();
+            if dist.is_none() || next_dist.is_none() {
+                break;
+            }
+            let (dist, vec_object_id) = dist.unwrap();
+            let (_n_dist, n_vec_object_id) = next_dist.unwrap();
+            if vec_object_id == *n_vec_object_id {
+                self.inner.remove(dist);
+            }
+        }
+    }
 }
 
 impl Default for EdgeResult {
@@ -150,5 +192,10 @@ mod tests {
 
         println!("{:#?}", edge_result);
         assert_eq!(edge_result.inner.len(), 6);
+
+        edge_result.remove(3);
+        println!("{:#?}", edge_result);
+        assert_eq!(edge_result.ranges.len(), 3);
+        assert_eq!(edge_result.inner.len(), 4);
     }
 }

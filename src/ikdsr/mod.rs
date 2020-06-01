@@ -46,7 +46,7 @@ pub fn insertion() {
     for object in objects {
         graph.insert_object(object.clone());
         let dom_traverse = DomTraverse::dominate_dominated_by(&mut graph, object.clone());
-        let dominated_by_objects = dom_traverse.dominated_by;
+        let dominated_by_objects = dom_traverse.map_dominate_objects();
 
         for g in queries.iter() {
             let mut g0 = g.clone();
@@ -64,28 +64,28 @@ pub fn insertion() {
             }
 
             // TODO: compute dominated objects by `object`
-            for (k, dominated) in dominated_by_objects.clone() {
+            for (dominated, k) in dominated_by_objects.clone() {
                 let mut g1 = g.clone();
                 g1.remove_less_k(k);
-                for dominated_object in dominated {
-                    let mut g2 = g1.clone();
-                    let mut voronoi: Voronoi;
-                    if let Some(q) = g2.pop_first() {
-                        voronoi = Voronoi::initial_voronoi(&mut graph, dominated_object, q.k);
-                        voronoi.save_to_result(&mut result);
-                    } else {
-                        continue;
-                    }
-
-                    for q in g2.iter() {
-                        voronoi.continue_voronoi(q.k);
-                        voronoi.save_to_result(&mut result);
-                    }
+                result.remove(dominated, k);
+                let mut g2 = g1.clone();
+                let mut voronoi: Voronoi;
+                if let Some(q) = g2.pop_first() {
+                    voronoi = Voronoi::initial_voronoi(&mut graph, dominated, q.k);
+                    voronoi.save_to_result(&mut result);
+                } else {
+                    continue;
                 }
+
+                for q in g2.iter() {
+                    voronoi.continue_voronoi(q.k);
+                    voronoi.save_to_result(&mut result);
+                }
+                graph.clean();
             }
         }
-        graph.clean();
     }
+    println!("{:#?}", result);
 }
 
 #[cfg(test)]
@@ -127,5 +127,10 @@ mod tests {
             graph.clean();
         }
         println!("{:#?}", result);
+    }
+
+    #[test]
+    fn test_insertion() {
+        insertion();
     }
 }

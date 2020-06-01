@@ -15,7 +15,7 @@ impl<'a> Voronoi<'a> {
     // TODO: DONE graph should be owned or cloned
     // TODO: DONE add parameter k
     pub fn initial_voronoi(graph: &'a mut Graph, object_id: ObjectId, k_start: K) -> Self {
-        let max_distance = graph.config.max_dist * 2.0;
+        let max_distance = graph.config.max_dist;
         let dom_traverse = DomTraverse::dominate_dominated_by_from_id(graph, object_id);
         let mut dominated_by_vec = dom_traverse.dominated_by_objects(k_start);
         dominated_by_vec.push(object_id);
@@ -211,8 +211,8 @@ pub struct Range {
 #[derive(Debug)]
 pub struct DomTraverse {
     originator: Arc<DataObject>,
-    pub dominated_by: HashMap<K, Vec<ObjectId>>,
-    pub dominate: HashMap<K, Vec<ObjectId>>,
+    pub dominated_by: HashMap<K, Vec<ObjectId>>,    // objek yang mendominasi originator
+    pub dominate: HashMap<K, Vec<ObjectId>>,        // objek yang dinominasi originator
 }
 
 impl DomTraverse {

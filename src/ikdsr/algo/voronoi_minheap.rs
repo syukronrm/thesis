@@ -269,7 +269,7 @@ impl<'a> Iterator for VoronoiMinHeap<'a> {
                 state.cost_pt_to_ne = *cost;
             }
 
-            if cost_ct_to_ns > self.max_dist * 2.0 {
+            if cost_ct_to_ns > self.max_dist {
                 continue;
             }
 

@@ -53,6 +53,14 @@ impl ResultVoronoi {
             }
         }
     }
+
+    pub fn remove_all(&mut self, object_id: ObjectId) {
+        for (_edge_id, k_edge_result) in &mut self.inner {
+            for (_k, edge_result) in k_edge_result {
+                edge_result.remove(object_id);
+            }
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -130,7 +138,7 @@ impl EdgeResult {
             vec_object_id.sort();
         }
         let inner_clone = self.inner.clone();
-        let mut inner_clone_iter= inner_clone.iter().peekable();
+        let mut inner_clone_iter = inner_clone.iter().peekable();
         loop {
             let dist = inner_clone_iter.next();
             let next_dist = inner_clone_iter.peek();

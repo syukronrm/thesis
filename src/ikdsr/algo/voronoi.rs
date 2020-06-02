@@ -192,10 +192,10 @@ impl<'a> Voronoi<'a> {
     }
 
     // TODO: DONE call to save
-    pub fn save_to_result(&self, result: &mut ResultVoronoi) {
+    pub fn save_to_result(&self, result: &mut ResultVoronoi, k: K) {
         for (edge_id, ranges) in &self.scope {
             if self.min_heap.is_original_edge(*edge_id) {
-                result.insert(self.min_heap.current_k, *edge_id, ranges.clone());
+                result.insert(k, *edge_id, ranges.clone());
             }
         }
     }
@@ -211,8 +211,8 @@ pub struct Range {
 #[derive(Debug)]
 pub struct DomTraverse {
     originator: Arc<DataObject>,
-    pub dominated_by: HashMap<K, Vec<ObjectId>>,    // objek yang mendominasi originator
-    pub dominate: HashMap<K, Vec<ObjectId>>,        // objek yang dinominasi originator
+    pub dominated_by: HashMap<K, Vec<ObjectId>>, // objek yang mendominasi originator
+    pub dominate: HashMap<K, Vec<ObjectId>>,     // objek yang dinominasi originator
 }
 
 impl DomTraverse {
@@ -302,7 +302,6 @@ impl DomTraverse {
         object_ids
     }
 
-    
     pub fn valid_dominated_by_query(&self, queries: Queries) {
         for q in queries.iter() {
             

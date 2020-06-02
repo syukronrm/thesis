@@ -28,11 +28,14 @@ impl Edge {
         self.objects.push(object);
     }
 
-    #[allow(dead_code)]
     pub fn add_objects(&mut self, objects: Vec<Arc<DataObject>>) {
         for o in objects {
             self.objects.push(o);
         }
+    }
+
+    pub fn remove_object(&mut self, object_id: ObjectId) {
+        self.objects.retain(|o| o.id != object_id);
     }
 
     #[allow(dead_code)]

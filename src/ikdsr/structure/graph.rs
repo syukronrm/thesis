@@ -84,6 +84,17 @@ impl Graph {
         }
     }
 
+    pub fn remove_object(&mut self, object_id: ObjectId) {
+        let object = self.objects.remove(&object_id).unwrap();
+        let edge_id = object.edge_id;
+        let data_edge = self.map_edges.get(&edge_id).unwrap();
+        let edge = self
+            .inner
+            .edge_weight_mut(data_edge.ni, data_edge.nj)
+            .unwrap();
+        edge.remove_object(object_id);
+    }
+
     pub fn insert_object(&mut self, object: Arc<DataObject>) {
         self.insert_objects(vec![object]);
     }

@@ -120,6 +120,7 @@ fn deletion() {
                 let mut g2 = g1.clone();
                 let mut voronoi: Voronoi;
                 if let Some(q) = g2.pop_first() {
+                    result.remove(dominate_object + 100000, q.k);
                     voronoi = Voronoi::initial_voronoi(&mut graph, dominate_object, q.k);
                     voronoi.save_to_result(&mut result, q.k);
                 } else {
@@ -127,6 +128,7 @@ fn deletion() {
                 }
 
                 for q in g2.iter() {
+                    result.remove(dominate_object + 100000, q.k);
                     voronoi.continue_voronoi(q.k);
                     voronoi.save_to_result(&mut result, q.k);
                 }

@@ -292,22 +292,6 @@ impl DomTraverse {
         object_ids
     }
 
-    pub fn dominated_by_objects_all_k(&self) -> Vec<ObjectId> {
-        let mut object_ids = Vec::new();
-        for (_k, vec_obj_id) in &self.dominated_by {
-            for obj_id in vec_obj_id {
-                object_ids.push(*obj_id);
-            }
-        }
-        object_ids
-    }
-
-    pub fn valid_dominated_by_query(&self, queries: Queries) {
-        for q in queries.iter() {
-            
-        }
-    }
-
     fn map_dominated_by_objects_k(&self, k_start: K) -> HashMap<ObjectId, K> {
         let mut map_objects_k = HashMap::new();
         for (k, vec_object_id) in &self.dominated_by {

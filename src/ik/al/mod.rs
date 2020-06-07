@@ -1,3 +1,3 @@
-pub mod bfs_minheap;
-pub mod voronoi;
-pub mod voronoi_minheap;
+pub mod bfs_mh;
+pub mod vor;
+pub mod vor_mh;

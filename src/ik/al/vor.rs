@@ -1,5 +1,5 @@
-use super::bfs_minheap::BfsMinHeap;
-use super::voronoi_minheap::{TraverseState as State, VoronoiMinHeap};
+use super::bfs_mh::BfsMinHeap;
+use super::vor_mh::{TraverseState as State, VoronoiMinHeap};
 use crate::prelude::*;
 use std::collections::HashMap;
 use std::sync::Arc;

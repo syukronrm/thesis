@@ -20,3 +20,8 @@ Cargo.lock
 **/*.bak
 
 .vscode/.ropeproject/objectdb
+
+# flamegraph
+perf.data
+stacks.folded
+flamegraph.svg

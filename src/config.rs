@@ -33,6 +33,11 @@ impl AppConfig {
         self.dataset_dir = dataset_dir.to_path_buf();
         self.paths = Paths::new(dataset_dir);
     }
+
+    pub fn object_path(&mut self, rel_path: String) {
+        let project_path = Path::new(env!("CARGO_MANIFEST_DIR"));
+        self.paths.object_path = project_path.join(rel_path)
+    }
 }
 
 /// Paths for all files for dataset

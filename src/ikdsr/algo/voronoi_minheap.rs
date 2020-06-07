@@ -28,7 +28,6 @@ impl<'a> VoronoiMinHeap<'a> {
         for centroid_id in centroid_ids {
             for node_id in graph.neighbors(centroid_id) {
                 let edge = graph.edge(node_id, centroid_id).unwrap();
-                println!("{}", centroid_id);
                 let smallest_k = *map_object_id_k
                     .get(&Graph::as_object_id(centroid_id))
                     .unwrap();

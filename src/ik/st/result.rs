@@ -96,7 +96,7 @@ impl EdgeResult {
             let next = range_iter.next();
 
             if let Some((k, v)) = next {
-                if *k < end {
+                if *k <= end {
                     if first {
                         inner_clone.insert(start, v.clone());
                         first = false;

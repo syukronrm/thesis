@@ -2,6 +2,7 @@ use crate::prelude::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 
+#[derive(Debug)]
 pub struct Queries {
     inner: Vec<Group>,
 }
@@ -63,7 +64,7 @@ impl<'a> Iterator for QueryIterator<'a> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Group {
     dimensions: Vec<DimensionIndex>,
     queries: Vec<Arc<Query>>,

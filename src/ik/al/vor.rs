@@ -176,7 +176,7 @@ impl<'a> Voronoi<'a> {
                         start_range = s.end;
                     } else {
                         let new_scope = Range {
-                            start: start_range,
+                            start: scope.start,
                             end: start_range + (scope.end - scope.start),
                             centroid_id: scope.centroid_id,
                         };

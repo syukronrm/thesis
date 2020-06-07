@@ -1,5 +1,5 @@
 mod config;
-mod ikdsr;
+mod ik;
 mod prelude;
 mod queries;
 mod src;

@@ -1,4 +1,4 @@
-extern crate thesis;
+extern crate t;
 
 #[test]
 fn hello() {

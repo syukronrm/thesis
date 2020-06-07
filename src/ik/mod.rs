@@ -1,6 +1,5 @@
-pub mod algo;
-pub mod structure;
-pub mod types;
+pub mod al;
+pub mod st;
 
 use crate::prelude::*;
 use std::sync::Arc;

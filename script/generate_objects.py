@@ -59,19 +59,21 @@ def generate_anticorrelated():
 
 def save_file(path, objects):
     object = objects[0]
-    str_header = "action id edge_id distance"
+    header = ["action", "id", "edge_id", "distance"]
     for i in range(1, MAX_D + 1):
-        str_header += " d" + str(i)
-    str_header += "\n"
+        header.append("d" + str(i))
+    str_header = ' '.join(header)
+    str_header += '\n';
 
     with open(path, "w") as file:
         file.writelines(str_header)
         for object in objects:
-            line = ""
+            line = []
             for o in object:
-                line += str(o) + " "
-            line += "\n"
-            file.writelines(line)
+                line.append(str(o))
+            str_line = ' '.join(line)
+            str_line += '\n'
+            file.writelines(str_line)
 
 if __name__ == "__main__":
     ind_objects = generate_independent()

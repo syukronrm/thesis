@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use std::cmp::Ordering;
-use std::collections::{BinaryHeap, HashMap};
+use std::collections::{BinaryHeap, HashMap, HashSet};
 
 // TODO: DONE save k value
 pub struct VoronoiMinHeap<'a> {
@@ -8,7 +8,7 @@ pub struct VoronoiMinHeap<'a> {
     max_dist: f32,
     min_heap: BinaryHeap<TraverseState>,
     cost_map: HashMap<NodeId, (CentroidId, f32)>,
-    visited: HashMap<EdgeId, bool>,
+    visited: HashSet<(NodeId, NodeId)>,
     map_object_id_k: HashMap<ObjectId, K>,
     map_centroid_edge_id: HashMap<EdgeId, (CentroidId, K)>,
     min_heap_reserve: Vec<TraverseState>,
@@ -59,7 +59,7 @@ impl<'a> VoronoiMinHeap<'a> {
             max_dist: graph.config.max_dist,
             min_heap,
             cost_map,
-            visited: HashMap::new(),
+            visited: HashSet::new(),
             map_object_id_k,
             map_centroid_edge_id: HashMap::new(),
             min_heap_reserve: Vec::new(),
@@ -128,23 +128,25 @@ impl<'a> VoronoiMinHeap<'a> {
 
     /// Return true if already visited, if not visit it and return false.
     fn visit(&mut self, a: NodeId, b: NodeId) -> bool {
-        if let Some(edge_id) = self.graph.edge_id(a, b) {
-            if self.visited.get(&edge_id).is_some() {
-                return true;
-            } else {
-                self.visited.insert(edge_id, true);
-            }
+        let (x, y) = if a < b { (a, b) } else { (b, a) };
+
+        if self.visited.get(&(x, y)).is_some() {
+            return true;
+        } else {
+            self.visited.insert((x, y));
         }
+
         return false;
     }
 
     /// Return true is already visited.
     fn is_visited(&self, a: NodeId, b: NodeId) -> bool {
-        if let Some(edge_id) = self.graph.edge_id(a, b) {
-            if self.visited.get(&edge_id).is_some() {
-                return true;
-            }
+        let (x, y) = if a < b { (a, b) } else { (b, a) };
+
+        if self.visited.get(&(x, y)).is_some() {
+            return true;
         }
+
         false
     }
 
@@ -182,7 +184,9 @@ impl<'a> VoronoiMinHeap<'a> {
 
         if state.centroid_ct_in_ns != state.centroid_pt_in_ne && state.smallest_k.0 > self.current_k
         {
-            if state.smallest_k.0 < self.graph.config.max_dim {
+            if self.k_of_object(state.centroid_ct_in_ns) < self.graph.config.max_dim
+                || self.k_of_object(state.centroid_pt_in_ne) < self.graph.config.max_dim
+            {
                 self.min_heap_reserve.push(state);
             }
         }
@@ -201,7 +205,7 @@ impl<'a> VoronoiMinHeap<'a> {
     }
 
     pub fn clear_visited(&mut self) {
-        self.visited = HashMap::new();
+        self.visited = HashSet::new();
     }
 
     pub fn is_original_edge(&self, edge_id: EdgeId) -> bool {

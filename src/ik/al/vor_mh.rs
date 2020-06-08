@@ -235,6 +235,7 @@ impl<'a> VoronoiMinHeap<'a> {
         self.cost_map.remove(&node_id);
     }
 
+    #[allow(dead_code)]
     pub fn min_heap_reserve_len(&self) -> usize {
         self.min_heap_reserve.len()
     }
@@ -340,7 +341,7 @@ impl<'a> Iterator for VoronoiMinHeap<'a> {
                 } else {
                     self.cost_map
                         .insert(node_id, (centroid_ct_in_ns, cost_next));
-                    let smallest_k = self.k_of_object(centroid_ct_in_ns);
+                    let _smallest_k = self.k_of_object(centroid_ct_in_ns);
                     self.min_heap.push(TraverseState {
                         cost_ct_to_ns: cost_ct_to_ne,
                         cost_ct_to_ne: cost_next,

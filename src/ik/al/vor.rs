@@ -162,7 +162,6 @@ impl<'a> Voronoi<'a> {
         let map_new_edge = self.min_heap.map_new_edge();
         for (edge_id, vec_new_edge_id) in map_new_edge {
             let mut adjusted_scopes: HashMap<CentroidId, Range> = HashMap::new();
-            let mut start_range = 0.0;
             for new_edge_id in vec_new_edge_id {
                 let scopes = self.scope.get(&new_edge_id);
                 if scopes.is_none() {

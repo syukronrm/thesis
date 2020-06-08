@@ -80,7 +80,7 @@ impl<'a> VoronoiMinHeap<'a> {
                     min_heap.push(**t);
                 }
 
-                self.current_k > t.smallest_k.0
+                t.smallest_k.0 > self.current_k
             })
             .map(|t| *t)
             .collect();
@@ -182,11 +182,7 @@ impl<'a> VoronoiMinHeap<'a> {
 
         if state.centroid_ct_in_ns != state.centroid_pt_in_ne && state.smallest_k.0 > self.current_k
         {
-            if state.centroid_pt_in_ne == 0 {
-                self.min_heap_reserve.push(state);
-            } else if self.k_of_object(state.centroid_ct_in_ns) < self.graph.config.max_dim
-                || self.k_of_object(state.centroid_pt_in_ne) < self.graph.config.max_dim
-            {
+            if state.smallest_k.0 < self.graph.config.max_dim {
                 self.min_heap_reserve.push(state);
             }
         }
@@ -233,6 +229,10 @@ impl<'a> VoronoiMinHeap<'a> {
 
     pub fn remove_cost(&mut self, node_id: NodeId) {
         self.cost_map.remove(&node_id);
+    }
+
+    pub fn min_heap_reserve_len(&self) -> usize {
+        self.min_heap_reserve.len()
     }
 }
 
@@ -345,7 +345,7 @@ impl<'a> Iterator for VoronoiMinHeap<'a> {
                         centroid_pt_in_ne: 0,
                         start_node_id: end_node_id,
                         end_node_id: node_id,
-                        smallest_k: (smallest_k, Position::Start),
+                        smallest_k: (0, Position::End),
                         edge: SimpleEdge::from_some(edge),
                     });
                 }

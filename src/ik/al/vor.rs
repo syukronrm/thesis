@@ -173,14 +173,12 @@ impl<'a> Voronoi<'a> {
                 for scope in scopes {
                     if let Some(s) = adjusted_scopes.get_mut(&scope.centroid_id) {
                         s.end = s.end + scope.end;
-                        start_range = s.end;
                     } else {
                         let new_scope = Range {
                             start: scope.start,
-                            end: start_range + (scope.end - scope.start),
+                            end: scope.start + (scope.end - scope.start),
                             centroid_id: scope.centroid_id,
                         };
-                        start_range = new_scope.end;
                         adjusted_scopes.insert(scope.centroid_id, new_scope);
                     }
                 }

@@ -21,6 +21,18 @@ def generate_independent():
         objects.append(object)
     return objects
 
+def generate_insert_independent():
+    objects = []
+    for object_id in range(OBJECT_N + 1, OBJECT_N + 1000):
+        edge_id = random.randrange(1, MAX_EDGE_ID + 1)
+        dist = random.random()
+        object = [1, object_id, edge_id, dist]
+        for _i in range(0, 10):
+            attr = random.random()
+            object.append(attr)
+        objects.append(object)
+    return objects
+
 def generate_correlated():
     objects = []
     for object_id in range(1, OBJECT_N + 1):
@@ -79,6 +91,7 @@ if __name__ == "__main__":
     ind_objects = generate_independent()
     cor_objects = generate_correlated()
     anticor_objects = generate_anticorrelated()
+    insert_objects = generate_insert_independent()
 
     project_dir = pathlib.Path(__file__).parent.parent.absolute()
     dataset_dir = path.join(project_dir, 'dataset/objects')
@@ -91,3 +104,6 @@ if __name__ == "__main__":
 
     anticor_path = path.join(dataset_dir, 'anticor.txt')
     save_file(anticor_path, anticor_objects)
+
+    insert_objects = path.join(dataset_dir, 'insert.txt')
+    save_file(insert_objects, anticor_objects)

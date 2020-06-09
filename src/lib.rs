@@ -1,8 +1,8 @@
-mod config;
-mod ik;
-mod prelude;
-mod queries;
-mod src;
-mod types;
+pub mod config;
+pub mod ik;
+pub mod prelude;
+pub mod queries;
+pub mod src;
+pub mod types;
 
-use prelude::*;
+pub use prelude::*;

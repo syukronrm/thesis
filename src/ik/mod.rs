@@ -13,7 +13,10 @@ pub fn construct() -> Graph {
 
     let mut result = ResultVoronoi::from_edge_ids(graph.map_edges());
 
-    for object in graph.all_objects() {
+    let mut objects = graph.all_objects();
+    objects.sort_by(|a, b| a.id.cmp(&b.id));
+
+    for object in objects {
         for g in queries.iter() {
             let mut g = g.clone();
             let mut voronoi: Voronoi;
@@ -31,6 +34,8 @@ pub fn construct() -> Graph {
         }
         graph.clean();
     }
+
+    println!("{:#?}", result);
 
     graph
 }
